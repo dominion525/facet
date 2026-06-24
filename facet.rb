@@ -23,23 +23,37 @@ COLORS = {
   white:   "#{CSI}37m",
 }
 
+# Switch this to a different FONT_* constant from fonts/ to change title size.
+TITLE_FONT = FONT_8x16
+
 PAGES = [
   { title: "facet",
     body:  ["the minimal slide tool", "on mruby"] },
   { title: "features",
     body:  ["- alt screen on enter",
             "- restores on exit",
-            "- big title via terminus 8x16"] },
+            "- bitmap title via terminus"] },
   { title: "last page",
     body:  ["press q + Enter to quit"] },
 ]
 
-def render_glyph(text, color: :yellow)
-  font = FONT_8x16
-  w    = font[:width]
-  h    = font[:height]
-  bpc  = font[:bytes_per_char]
-  bs   = text.bytes
+def row_bits(data, offset, bpr)
+  row = 0
+  i = 0
+  while i < bpr
+    row = (row << 8) | (data[offset + i] || 0)
+    i += 1
+  end
+  row
+end
+
+def render_glyph(text, font: TITLE_FONT, color: :yellow)
+  w     = font[:width]
+  h     = font[:height]
+  bpr   = font[:bytes_per_row]
+  bpc   = font[:bytes_per_char]
+  bit_w = bpr * 8
+  bs    = text.bytes
   print COLORS[color]
   r = 0
   while r < h
@@ -48,13 +62,13 @@ def render_glyph(text, color: :yellow)
         top = 0
         bot = 0
       else
-        base = (cp - 0x20) * bpc
-        top  = font[:data][base + r] || 0
-        bot  = (r + 1 < h) ? (font[:data][base + r + 1] || 0) : 0
+        base = (cp - 0x20) * bpc + r * bpr
+        top  = row_bits(font[:data], base, bpr)
+        bot  = (r + 1 < h) ? row_bits(font[:data], base + bpr, bpr) : 0
       end
       x = 0
       while x < w
-        shift = w - 1 - x
+        shift = bit_w - 1 - x
         t = (top >> shift) & 1
         b = (bot >> shift) & 1
         print case [t, b]
