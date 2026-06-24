@@ -26,8 +26,8 @@ PAGES = [
     body:  ["",
             "  a minimal bitmap slide tool on mruby",
             "",
-            "  width ruler (90 ascii chars = 540 cells):",
-            "  ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9",
+            "  width ruler (75 ascii chars = 450 cells, margin on the right):",
+            "  ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+",
             "",
             "  l + Enter to go forward"] },
 

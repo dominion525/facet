@@ -350,11 +350,13 @@ end
 #   -c / --calibrate            switch to the calibration screen
 #   COLS ROWS                   override SCREEN_COLS / SCREEN_ROWS (positional)
 #   --baseline N / -b N         override SPRITE_BASELINE (sprite foot row)
+#   --duration N / -d N         override DURATION_SEC (camerlengo goal time)
 #                                this can be below SCREEN_ROWS, useful for
 #                                full-screen terminals where you want the
 #                                sprites pinned to the actual bottom edge.
 calibrate           = false
 sprite_baseline_arg = nil
+duration_arg        = nil
 positional          = []
 i = 0
 while i < ARGV.size
@@ -364,6 +366,9 @@ while i < ARGV.size
     i += 1
   elsif (a == "--baseline" || a == "-b") && ARGV[i + 1]
     sprite_baseline_arg = ARGV[i + 1].to_i
+    i += 2
+  elsif (a == "--duration" || a == "-d") && ARGV[i + 1]
+    duration_arg = ARGV[i + 1].to_i
     i += 2
   elsif a.start_with?("-")
     i += 1
@@ -382,6 +387,10 @@ end
 
 if sprite_baseline_arg && sprite_baseline_arg > 10
   SPRITE_BASELINE = sprite_baseline_arg
+end
+
+if duration_arg && duration_arg > 0
+  DURATION_SEC = duration_arg
 end
 
 SPRITE_TOP_ROW = SPRITE_BASELINE - SPRITE_HEIGHT
