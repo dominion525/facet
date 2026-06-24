@@ -1,7 +1,10 @@
-# facet - M3: alt screen, color theming, bullet decoration
-# Compile: mrbc facet.rb
-# Run    : mruby -b facet.mrb
-# Quit   : q + Enter
+# facet - bitmap-titled slide tool on mruby
+# Build: ./build.sh   (or: mrbc -o facet.mrb fonts/terminus_8x16.rb facet.rb)
+# Run  : mruby -b facet.mrb
+# Quit : q + Enter
+#
+# Font tables are defined in fonts/*.rb and prepended at build time so
+# constants like FONT_8x16 are available when this file is evaluated.
 
 STDOUT.sync = true
 
@@ -26,10 +29,48 @@ PAGES = [
   { title: "features",
     body:  ["- alt screen on enter",
             "- restores on exit",
-            "- colored title and bullets"] },
+            "- big title via terminus 8x16"] },
   { title: "last page",
     body:  ["press q + Enter to quit"] },
 ]
+
+def render_glyph(text, color: :yellow)
+  font = FONT_8x16
+  w    = font[:width]
+  h    = font[:height]
+  bpc  = font[:bytes_per_char]
+  bs   = text.bytes
+  print COLORS[color]
+  r = 0
+  while r < h
+    bs.each do |cp|
+      if cp < 0x20 || cp > 0x7e
+        top = 0
+        bot = 0
+      else
+        base = (cp - 0x20) * bpc
+        top  = font[:data][base + r] || 0
+        bot  = (r + 1 < h) ? (font[:data][base + r + 1] || 0) : 0
+      end
+      x = 0
+      while x < w
+        shift = w - 1 - x
+        t = (top >> shift) & 1
+        b = (bot >> shift) & 1
+        print case [t, b]
+              when [1, 1] then "█"
+              when [1, 0] then "▀"
+              when [0, 1] then "▄"
+              else " "
+              end
+        x += 1
+      end
+    end
+    puts
+    r += 2
+  end
+  print COLORS[:reset]
+end
 
 def render_line(line)
   if line.empty?
@@ -45,7 +86,7 @@ end
 def render(idx)
   print "#{CSI}2J#{CSI}H"
   page = PAGES[idx]
-  puts "#{COLORS[:bold]}#{COLORS[:yellow]}#{page[:title]}#{COLORS[:reset]}"
+  render_glyph(page[:title], color: :yellow)
   puts
   page[:body].each { |line| render_line(line) }
   puts
