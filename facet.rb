@@ -1,31 +1,41 @@
-# facet - M1: minimal one-page slide
+# facet - M2: page navigation
 # Compile: mrbc facet.rb
 # Run    : mruby -b facet.mrb
-# Quit   : Ctrl+C
+# Quit   : q + Enter
 
 STDOUT.sync = true
 
 CSI = "\e["
 
-def reset
+PAGES = [
+  ["facet",      "", "  the minimal slide tool", "  on mruby"],
+  ["page 2",     "", "  - bullet 1",             "  - bullet 2"],
+  ["last page",  "", "  end"],
+]
+
+def render(idx)
+  page = PAGES[idx]
+  print "#{CSI}2J#{CSI}H"
+  print "#{CSI}1;33m"
+  puts page[0]
   print "#{CSI}0m"
+  page[1..].each { |line| puts line }
+  puts
+  puts "  (#{idx + 1}/#{PAGES.length})  h:prev  l:next  q:quit  (then Enter)"
 end
 
-print "#{CSI}2J#{CSI}H"
+idx = 0
+render(idx)
 
-print "#{CSI}1;33m"
-puts "facet"
-reset
-
-puts
-puts
-
-print "#{CSI}36m"
-puts "  the minimal slide tool"
-puts "  on mruby"
-reset
-
-puts
-puts "  (Ctrl+C to quit)"
-
-loop { sleep 1 }
+while (line = STDIN.gets)
+  case line.chomp
+  when "q"
+    break
+  when "l"
+    idx += 1 if idx < PAGES.length - 1
+    render(idx)
+  when "h"
+    idx -= 1 if idx > 0
+    render(idx)
+  end
+end
