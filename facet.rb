@@ -23,8 +23,9 @@ COLORS = {
   white:   "#{CSI}37m",
 }
 
-# Switch this to a different FONT_* constant from fonts/ to change title size.
+# Switch these to other FONT_* / SHINONOME_* constants to change fonts.
 TITLE_FONT = FONT_8x16
+JP_FONT    = SHINONOME_K12
 
 PAGES = [
   { title: "facet",
@@ -33,6 +34,9 @@ PAGES = [
     body:  ["- alt screen on enter",
             "- restores on exit",
             "- bitmap title via terminus"] },
+  { title: "ふぉんと",
+    body:  ["jp title via shinonome 12x12",
+            "- ひらがな + カタカナ + 1ku"] },
   { title: "last page",
     body:  ["press q + Enter to quit"] },
 ]
@@ -45,6 +49,40 @@ def row_bits(data, offset, bpr)
     i += 1
   end
   row
+end
+
+def row_bits_str(str, offset, bpr)
+  row = 0
+  i = 0
+  while i < bpr
+    row = (row << 8) | (str.getbyte(offset + i) || 0)
+    i += 1
+  end
+  row
+end
+
+def utf8_codepoints(text)
+  result = []
+  bs = text.bytes
+  i = 0
+  len = bs.size
+  while i < len
+    b = bs[i]
+    if b < 0x80
+      result << b
+      i += 1
+    elsif b < 0xE0
+      result << (((b & 0x1F) << 6) | (bs[i + 1] & 0x3F))
+      i += 2
+    elsif b < 0xF0
+      result << (((b & 0x0F) << 12) | ((bs[i + 1] & 0x3F) << 6) | (bs[i + 2] & 0x3F))
+      i += 3
+    else
+      result << (((b & 0x07) << 18) | ((bs[i + 1] & 0x3F) << 12) | ((bs[i + 2] & 0x3F) << 6) | (bs[i + 3] & 0x3F))
+      i += 4
+    end
+  end
+  result
 end
 
 def render_glyph(text, font: TITLE_FONT, color: :yellow)
@@ -86,6 +124,55 @@ def render_glyph(text, font: TITLE_FONT, color: :yellow)
   print COLORS[:reset]
 end
 
+def render_jp_glyph(text, font: JP_FONT, color: :yellow)
+  w     = font[:width]
+  h     = font[:height]
+  bpr   = font[:bytes_per_row]
+  bit_w = bpr * 8
+  cps   = utf8_codepoints(text)
+  u2j   = font[:u2j]
+  data  = font[:data]
+  print COLORS[color]
+  r = 0
+  while r < h
+    cps.each do |cp|
+      jis   = u2j[cp]
+      bytes = jis ? data[jis] : nil
+      if bytes
+        top = row_bits_str(bytes, r * bpr, bpr)
+        bot = (r + 1 < h) ? row_bits_str(bytes, (r + 1) * bpr, bpr) : 0
+      else
+        top = 0
+        bot = 0
+      end
+      x = 0
+      while x < w
+        shift = bit_w - 1 - x
+        t = (top >> shift) & 1
+        b = (bot >> shift) & 1
+        print case [t, b]
+              when [1, 1] then "█"
+              when [1, 0] then "▀"
+              when [0, 1] then "▄"
+              else " "
+              end
+        x += 1
+      end
+    end
+    puts
+    r += 2
+  end
+  print COLORS[:reset]
+end
+
+def render_title(text)
+  if text.bytes.any? { |b| b >= 0x80 }
+    render_jp_glyph(text)
+  else
+    render_glyph(text)
+  end
+end
+
 def render_line(line)
   if line.empty?
     puts
@@ -100,7 +187,7 @@ end
 def render(idx)
   print "#{CSI}2J#{CSI}H"
   page = PAGES[idx]
-  render_glyph(page[:title], color: :yellow)
+  render_title(page[:title])
   puts
   page[:body].each { |line| render_line(line) }
   puts
