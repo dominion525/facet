@@ -23,22 +23,72 @@ COLORS = {
   white:   "#{CSI}37m",
 }
 
-# Switch these to other FONT_* / SHINONOME_* constants to change fonts.
+# Switch TITLE_FONT to another FONT_NxM and JP_FONT/JP_SCALE will follow
+# the corresponding shinonome size (24/32 are produced by integer-scaling
+# the 12/16 source bitmaps).
 TITLE_FONT = FONT_8x16
-JP_FONT    = SHINONOME_K12
+
+JP_FONT, JP_SCALE = case TITLE_FONT[:height]
+                    when 12 then [SHINONOME_K12, 1]
+                    when 16 then [SHINONOME_K16, 1]
+                    when 24 then [SHINONOME_K12, 2]
+                    when 32 then [SHINONOME_K16, 2]
+                    end
 
 PAGES = [
   { title: "facet",
-    body:  ["the minimal slide tool", "on mruby"] },
-  { title: "features",
-    body:  ["- alt screen on enter",
-            "- restores on exit",
-            "- bitmap title via terminus"] },
-  { title: "ふぉんと",
-    body:  ["jp title via shinonome 12x12",
-            "- ひらがな + カタカナ + 1ku"] },
-  { title: "last page",
-    body:  ["press q + Enter to quit"] },
+    body:  ["",
+            "  a minimal slide tool",
+            "  written in pure mruby",
+            "",
+            "  l + Enter to go forward"] },
+
+  { title: "design",
+    body:  ["- mruby subset only",
+            "- no filesystem, no signals",
+            "- pages embedded as ruby literals",
+            "- stdin and stdout only"] },
+
+  { title: "keys",
+    body:  ["- h + Enter  : previous page",
+            "- l + Enter  : next page",
+            "- q + Enter  : quit",
+            "",
+            "  line-buffered. no stty needed"] },
+
+  { title: "ascii font",
+    body:  ["- terminus 4.49.1, 4 sizes bundled",
+            "    6x12 / 8x16 / 12x24 / 16x32",
+            "- block character (UPPER / LOWER / FULL)",
+            "- glyphs packed as string literals in fonts/"] },
+
+  { title: "decoration",
+    body:  ["- bullet lines render as cyan dots",
+            "- non-bullet lines stay plain",
+            "- title color is yellow + bold",
+            "- footer dimmed"] },
+
+  { title: "東雲フォント",
+    body:  ["- shinonome 0.9.11 を取り込み",
+            "- ひらがな ・ カタカナ ・ 第1水準漢字",
+            "- 12x12 と 16x16 を内蔵",
+            "- 24x24 と 32x32 は整数倍スケールで描画"] },
+
+  { title: "漢字混在",
+    body:  ["- title に漢字が来ても block 描画される",
+            "- 本文は ANSI text としてそのまま出る",
+            "- 端末側のフォントに依存する"] },
+
+  { title: "build",
+    body:  ["- `./build.sh` で facet.mrb を生成",
+            "- fonts/*.rb を先に並べて 1 ファイルに mrbc",
+            "- 大きいデータは chunk 化して unpack する"] },
+
+  { title: "facet",
+    body:  ["",
+            "  end of demo",
+            "",
+            "  q + Enter to quit"] },
 ]
 
 def row_bits(data, offset, bpr)
@@ -124,30 +174,35 @@ def render_glyph(text, font: TITLE_FONT, color: :yellow)
   print COLORS[:reset]
 end
 
-def render_jp_glyph(text, font: JP_FONT, color: :yellow)
-  w     = font[:width]
-  h     = font[:height]
-  bpr   = font[:bytes_per_row]
-  bit_w = bpr * 8
-  cps   = utf8_codepoints(text)
-  u2j   = font[:u2j]
-  data  = font[:data]
+def render_jp_glyph(text, font: JP_FONT, color: :yellow, scale: JP_SCALE)
+  w        = font[:width]
+  h        = font[:height]
+  bpr      = font[:bytes_per_row]
+  bit_w    = bpr * 8
+  cps      = utf8_codepoints(text)
+  u2j      = font[:u2j]
+  data     = font[:data]
+  scaled_w = w * scale
+  scaled_h = h * scale
   print COLORS[color]
   r = 0
-  while r < h
+  while r < scaled_h
     cps.each do |cp|
       jis   = u2j[cp]
       bytes = jis ? data[jis] : nil
+      orig_top = r / scale
+      orig_bot = (r + 1) / scale
       if bytes
-        top = row_bits_str(bytes, r * bpr, bpr)
-        bot = (r + 1 < h) ? row_bits_str(bytes, (r + 1) * bpr, bpr) : 0
+        top = orig_top < h ? row_bits_str(bytes, orig_top * bpr, bpr) : 0
+        bot = orig_bot < h ? row_bits_str(bytes, orig_bot * bpr, bpr) : 0
       else
         top = 0
         bot = 0
       end
       x = 0
-      while x < w
-        shift = bit_w - 1 - x
+      while x < scaled_w
+        orig_x = x / scale
+        shift  = bit_w - 1 - orig_x
         t = (top >> shift) & 1
         b = (bot >> shift) & 1
         print case [t, b]

@@ -14,6 +14,7 @@ mrbc -o facet.mrb \
   fonts/terminus_12x24.rb \
   fonts/terminus_16x32.rb \
   fonts/shinonome_12x12.rb \
+  fonts/shinonome_16x16.rb \
   facet.rb
 
 echo "built facet.mrb"
