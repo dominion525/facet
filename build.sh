@@ -16,6 +16,7 @@ mrbc -o facet.mrb \
   fonts/shinonome_12x12.rb \
   fonts/shinonome_16x16.rb \
   fonts/sprite_hasumikin.rb \
+  slide.rb \
   facet.rb
 
 echo "built facet.mrb"

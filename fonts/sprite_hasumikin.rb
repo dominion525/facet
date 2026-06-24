@@ -32,10 +32,6 @@ SPRITE_RAPIKO = [
 ]
 
 SPRITE_CAMERLENGO = [
-  "",
-  "",
-  "",
-  "",
   ".............yyyyy",
   "............yyyddyy",
   "....ggggggggyyyyyyy",

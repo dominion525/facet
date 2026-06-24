@@ -1,10 +1,12 @@
 # facet - bitmap-titled slide tool on mruby
-# Build: ./build.sh   (or: mrbc -o facet.mrb fonts/terminus_8x16.rb facet.rb)
+# Build: ./build.sh
 # Run  : mruby -b facet.mrb
 # Quit : q + Enter
 #
-# Font tables are defined in fonts/*.rb and prepended at build time so
-# constants like FONT_8x16 are available when this file is evaluated.
+# Content and the things you usually tweak (PAGES, TITLE_FONT, SCREEN_COLS,
+# DURATION_SEC, etc.) live in slide.rb. Font tables come from fonts/*.rb.
+# build.sh prepends everything before this file so the constants below are
+# already defined when facet.rb is evaluated.
 
 STDOUT.sync = true
 
@@ -23,11 +25,8 @@ COLORS = {
   white:   "#{CSI}37m",
 }
 
-# Switch TITLE_FONT to another FONT_NxM and JP_FONT/JP_SCALE will follow
-# the corresponding shinonome size (24/32 are produced by integer-scaling
-# the 12/16 source bitmaps).
-TITLE_FONT = FONT_8x16
-
+# TITLE_FONT comes from slide.rb. JP_FONT / JP_SCALE follow its height:
+# 24 / 32 sizes are produced by integer-scaling the 12 / 16 source bitmaps.
 JP_FONT, JP_SCALE = case TITLE_FONT[:height]
                     when 12 then [SHINONOME_K12, 1]
                     when 16 then [SHINONOME_K16, 1]
@@ -35,69 +34,7 @@ JP_FONT, JP_SCALE = case TITLE_FONT[:height]
                     when 32 then [SHINONOME_K16, 2]
                     end
 
-DURATION_SEC  = 300
-SCREEN_COLS   = 120
-SPRITE_HEIGHT = 11
-START_TIME    = Time.now.to_i
-
-BODY_EN_FONT = FONT_6x12
-BODY_JP_FONT = SHINONOME_K12
-
-PAGES = [
-  { title: "facet",
-    body:  ["",
-            "  a minimal slide tool",
-            "  written in pure mruby",
-            "",
-            "  l + Enter to go forward"] },
-
-  { title: "design",
-    body:  ["- mruby subset only",
-            "- no filesystem, no signals",
-            "- pages embedded as ruby literals",
-            "- stdin and stdout only"] },
-
-  { title: "keys",
-    body:  ["- h + Enter  : previous page",
-            "- l + Enter  : next page",
-            "- q + Enter  : quit",
-            "",
-            "  line-buffered. no stty needed"] },
-
-  { title: "ascii font",
-    body:  ["- terminus 4.49.1, 4 sizes bundled",
-            "    6x12 / 8x16 / 12x24 / 16x32",
-            "- block character (UPPER / LOWER / FULL)",
-            "- glyphs packed as string literals in fonts/"] },
-
-  { title: "decoration",
-    body:  ["- bullet lines render as cyan dots",
-            "- non-bullet lines stay plain",
-            "- title color is yellow + bold",
-            "- footer dimmed"] },
-
-  { title: "東雲フォント",
-    body:  ["- shinonome 0.9.11 を取り込み",
-            "- ひらがな ・ カタカナ ・ 第1水準漢字",
-            "- 12x12 と 16x16 を内蔵",
-            "- 24x24 と 32x32 は整数倍スケールで描画"] },
-
-  { title: "漢字混在",
-    body:  ["- title に漢字が来ても block 描画される",
-            "- 本文は ANSI text としてそのまま出る",
-            "- 端末側のフォントに依存する"] },
-
-  { title: "build",
-    body:  ["- `./build.sh` で facet.mrb を生成",
-            "- fonts/*.rb を先に並べて 1 ファイルに mrbc",
-            "- 大きいデータは chunk 化して unpack する"] },
-
-  { title: "facet",
-    body:  ["",
-            "  end of demo",
-            "",
-            "  q + Enter to quit"] },
-]
+START_TIME = Time.now.to_i
 
 def row_bits(data, offset, bpr)
   row = 0
@@ -155,29 +92,19 @@ def render_glyph(text, font: TITLE_FONT, color: :yellow)
   while r < h
     bs.each do |cp|
       if cp < 0x20 || cp > 0x7e
-        top = 0
-        bot = 0
+        bits = 0
       else
-        base = (cp - 0x20) * bpc + r * bpr
-        top  = row_bits(font[:data], base, bpr)
-        bot  = (r + 1 < h) ? row_bits(font[:data], base + bpr, bpr) : 0
+        bits = row_bits(font[:data], (cp - 0x20) * bpc + r * bpr, bpr)
       end
       x = 0
       while x < w
         shift = bit_w - 1 - x
-        t = (top >> shift) & 1
-        b = (bot >> shift) & 1
-        print case [t, b]
-              when [1, 1] then "█"
-              when [1, 0] then "▀"
-              when [0, 1] then "▄"
-              else " "
-              end
+        print ((bits >> shift) & 1 == 1) ? "█" : " "
         x += 1
       end
     end
     puts
-    r += 2
+    r += 1
   end
   print COLORS[:reset]
 end
@@ -198,32 +125,17 @@ def render_jp_glyph(text, font: JP_FONT, color: :yellow, scale: JP_SCALE)
     cps.each do |cp|
       jis   = u2j[cp]
       bytes = jis ? data[jis] : nil
-      orig_top = r / scale
-      orig_bot = (r + 1) / scale
-      if bytes
-        top = orig_top < h ? row_bits_str(bytes, orig_top * bpr, bpr) : 0
-        bot = orig_bot < h ? row_bits_str(bytes, orig_bot * bpr, bpr) : 0
-      else
-        top = 0
-        bot = 0
-      end
+      orig  = r / scale
+      bits  = (bytes && orig < h) ? row_bits_str(bytes, orig * bpr, bpr) : 0
       x = 0
       while x < scaled_w
-        orig_x = x / scale
-        shift  = bit_w - 1 - orig_x
-        t = (top >> shift) & 1
-        b = (bot >> shift) & 1
-        print case [t, b]
-              when [1, 1] then "█"
-              when [1, 0] then "▀"
-              when [0, 1] then "▄"
-              else " "
-              end
+        shift = bit_w - 1 - (x / scale)
+        print ((bits >> shift) & 1 == 1) ? "█" : " "
         x += 1
       end
     end
     puts
-    r += 2
+    r += 1
   end
   print COLORS[:reset]
 end
@@ -277,11 +189,6 @@ def render_sprite(rows, x)
   end
 end
 
-def fmt_time(sec)
-  m, s = sec.divmod(60)
-  "%d:%02d" % [m, s]
-end
-
 def render_mixed_glyph(text, en_font: BODY_EN_FONT, jp_font: BODY_JP_FONT, color: :white)
   h     = en_font[:height]
   bpr_e = en_font[:bytes_per_row]
@@ -301,61 +208,36 @@ def render_mixed_glyph(text, en_font: BODY_EN_FONT, jp_font: BODY_JP_FONT, color
     cps.each do |cp|
       if cp < 0x80
         if cp >= 0x20 && cp <= 0x7e
-          base = (cp - 0x20) * bpc_e
-          top = data_e[base + r] || 0
-          bot = (r + 1 < h) ? (data_e[base + r + 1] || 0) : 0
+          bits = row_bits(data_e, (cp - 0x20) * bpc_e + r * bpr_e, bpr_e)
         else
-          top = 0
-          bot = 0
+          bits = 0
         end
         x = 0
         while x < w_e
           shift = bit_e - 1 - x
-          t = (top >> shift) & 1
-          b = (bot >> shift) & 1
-          print case [t, b]
-                when [1, 1] then "█"
-                when [1, 0] then "▀"
-                when [0, 1] then "▄"
-                else " "
-                end
+          print ((bits >> shift) & 1 == 1) ? "█" : " "
           x += 1
         end
       else
         jis = u2j[cp]
         bytes = jis ? data_j[jis] : nil
-        if bytes
-          top = row_bits_str(bytes, r * bpr_j, bpr_j)
-          bot = (r + 1 < h) ? row_bits_str(bytes, (r + 1) * bpr_j, bpr_j) : 0
-        else
-          top = 0
-          bot = 0
-        end
+        bits = bytes ? row_bits_str(bytes, r * bpr_j, bpr_j) : 0
         x = 0
         while x < w_j
           shift = bit_j - 1 - x
-          t = (top >> shift) & 1
-          b = (bot >> shift) & 1
-          print case [t, b]
-                when [1, 1] then "█"
-                when [1, 0] then "▀"
-                when [0, 1] then "▄"
-                else " "
-                end
+          print ((bits >> shift) & 1 == 1) ? "█" : " "
           x += 1
         end
       end
     end
     puts
-    r += 2
+    r += 1
   end
   print COLORS[:reset]
 end
 
 def render_line(line)
   if line.empty?
-    puts
-    puts
     puts
   elsif line.start_with?("-")
     rest = line[1..].lstrip
@@ -371,42 +253,161 @@ def render(idx)
   render_title(page[:title])
   puts
   page[:body].each { |line| render_line(line) }
-  puts
-  page_pct = (idx + 1) * 100 / PAGES.length
+
+  page_pct = PAGES.length > 1 ? idx * 100 / (PAGES.length - 1) : 0
   elapsed  = Time.now.to_i - START_TIME
   time_pct = elapsed * 100 / DURATION_SEC
   time_pct = 100 if time_pct > 100
 
-  rapiko_w = sprite_width(SPRITE_RAPIKO)
-  rapiko_x = 1 + (SCREEN_COLS - rapiko_w) * page_pct / 100
+  rapiko_w  = sprite_width(SPRITE_RAPIKO)
+  rapiko_x  = 1 + (SCREEN_COLS - rapiko_w) * page_pct / 100
+  rapiko_y  = SPRITE_TOP_ROW + (SPRITE_HEIGHT - SPRITE_RAPIKO.size)
+  print "#{CSI}#{rapiko_y};1H"
   render_sprite(SPRITE_RAPIKO, rapiko_x)
-  print "#{CSI}#{SPRITE_HEIGHT}A"
 
   camerlengo_w = sprite_width(SPRITE_CAMERLENGO)
   camerlengo_x = 1 + (SCREEN_COLS - camerlengo_w) * time_pct / 100
+  camerlengo_y = SPRITE_TOP_ROW + (SPRITE_HEIGHT - SPRITE_CAMERLENGO.size)
+  print "#{CSI}#{camerlengo_y};1H"
   render_sprite(SPRITE_CAMERLENGO, camerlengo_x)
-
-  puts
-  puts "#{COLORS[:dim]}(#{idx + 1}/#{PAGES.length})  page #{page_pct}%  time #{fmt_time(elapsed)}/#{fmt_time(DURATION_SEC)}  Enter or l:next  h:prev  q:quit#{COLORS[:reset]}"
 end
+
+# Calibration screen: paints a "+" at each of the 4 SCREEN_COLS x SCREEN_ROWS
+# corners and rulers along the top/left edges so you can match the constants
+# in slide.rb to your actual terminal size.
+def render_calibration
+  print "#{CSI}2J#{CSI}H"
+
+  print "#{CSI}1;1H+"
+  print "#{CSI}1;#{SCREEN_COLS}H+"
+  print "#{CSI}#{SCREEN_ROWS};1H+"
+  print "#{CSI}#{SCREEN_ROWS};#{SCREEN_COLS}H+"
+
+  print "#{CSI}1;2H"
+  c = 2
+  while c < SCREEN_COLS
+    if c % 10 == 0
+      print((c / 10) % 10)
+    elsif c % 5 == 0
+      print "+"
+    else
+      print "-"
+    end
+    c += 1
+  end
+
+  r = 2
+  while r < SCREEN_ROWS
+    print "#{CSI}#{r};1H"
+    if r % 10 == 0
+      print((r / 10) % 10)
+    elsif r % 5 == 0
+      print "+"
+    else
+      print "|"
+    end
+    r += 1
+  end
+
+  # bitmap で実際の描画パスを使う。タイトル font + 本文 font + 日本語と
+  # 「何行入るか」を同時に確認できる。
+  # 通常の render() と同じく、タイトル直後は puts 1 行ぶんだけ空けてから
+  # body を積む。"空行をたっぷり入れるかどうか" は PAGES 側の自由。
+  print "#{CSI}5;3H"
+  render_title("calib  #{SCREEN_COLS}x#{SCREEN_ROWS}  base=#{SPRITE_BASELINE}")
+  puts
+  body_capacity = (SPRITE_TOP_ROW - 5 - 16 - 1) / 12
+  body_capacity = 1 if body_capacity < 1
+  en_per_line = SCREEN_COLS / BODY_EN_FONT[:width]
+  jp_per_line = SCREEN_COLS / BODY_JP_FONT[:width]
+  facts = [
+    "  日本語混在 漢字 ひらがな カタカナ あいう abc XYZ 0123456789",
+    "  width: #{en_per_line} ascii or #{jp_per_line} jp chars per line",
+    "  title #{TITLE_FONT[:width]}x#{TITLE_FONT[:height]}  body #{BODY_EN_FONT[:width]}x#{BODY_EN_FONT[:height]} (en) / #{BODY_JP_FONT[:width]}x#{BODY_JP_FONT[:height]} (jp)",
+    "  capacity: #{body_capacity} body rows, sprite top y=#{SPRITE_TOP_ROW}",
+    "  DURATION_SEC=#{DURATION_SEC}",
+  ]
+  i = 1
+  while i <= body_capacity
+    line = facts[i - 1] || "  row #{i}"
+    render_mixed_glyph(line)
+    i += 1
+  end
+
+  # スプライトも本番と同じ位置（左端と右端）に置く。
+  rapiko_y = SPRITE_TOP_ROW + (SPRITE_HEIGHT - SPRITE_RAPIKO.size)
+  print "#{CSI}#{rapiko_y};1H"
+  render_sprite(SPRITE_RAPIKO, 1)
+
+  camerlengo_w = sprite_width(SPRITE_CAMERLENGO)
+  camerlengo_x = SCREEN_COLS - camerlengo_w
+  camerlengo_y = SPRITE_TOP_ROW + (SPRITE_HEIGHT - SPRITE_CAMERLENGO.size)
+  print "#{CSI}#{camerlengo_y};1H"
+  render_sprite(SPRITE_CAMERLENGO, camerlengo_x)
+end
+
+# CLI args
+#   -c / --calibrate            switch to the calibration screen
+#   COLS ROWS                   override SCREEN_COLS / SCREEN_ROWS (positional)
+#   --baseline N / -b N         override SPRITE_BASELINE (sprite foot row)
+#                                this can be below SCREEN_ROWS, useful for
+#                                full-screen terminals where you want the
+#                                sprites pinned to the actual bottom edge.
+calibrate           = false
+sprite_baseline_arg = nil
+positional          = []
+i = 0
+while i < ARGV.size
+  a = ARGV[i]
+  if a == "-c" || a == "--calibrate"
+    calibrate = true
+    i += 1
+  elsif (a == "--baseline" || a == "-b") && ARGV[i + 1]
+    sprite_baseline_arg = ARGV[i + 1].to_i
+    i += 2
+  elsif a.start_with?("-")
+    i += 1
+  else
+    positional << a
+    i += 1
+  end
+end
+
+if positional.size >= 2
+  cols_arg = positional[0].to_i
+  rows_arg = positional[1].to_i
+  SCREEN_COLS = cols_arg if cols_arg > 10
+  SCREEN_ROWS = rows_arg if rows_arg > 10
+end
+
+if sprite_baseline_arg && sprite_baseline_arg > 10
+  SPRITE_BASELINE = sprite_baseline_arg
+end
+
+SPRITE_TOP_ROW = SPRITE_BASELINE - SPRITE_HEIGHT
 
 begin
   print "#{CSI}?1049h"  # DECSET 1049: alt screen
   print "#{CSI}?25l"    # hide cursor
 
-  idx = 0
-  render(idx)
+  if calibrate
+    render_calibration
+    STDIN.gets
+  else
+    idx = 0
+    render(idx)
 
-  while (line = STDIN.gets)
-    case line.chomp
-    when "q"
-      break
-    when "l", ""
-      idx += 1 if idx < PAGES.length - 1
-      render(idx)
-    when "h"
-      idx -= 1 if idx > 0
-      render(idx)
+    while (line = STDIN.gets)
+      case line.chomp
+      when "q"
+        break
+      when "l", ""
+        idx += 1 if idx < PAGES.length - 1
+        render(idx)
+      when "h"
+        idx -= 1 if idx > 0
+        render(idx)
+      end
     end
   end
 ensure
