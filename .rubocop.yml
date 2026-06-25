@@ -1,0 +1,92 @@
+# Formatter-leaning rubocop config. facet runs on mruby (which rubocop
+# does not actually understand), so we only enable cops that are about
+# how the source LOOKS, not which APIs it uses.
+
+plugins:
+  - rubocop-performance
+
+AllCops:
+  NewCops: disable
+  TargetRubyVersion: 3.0
+  SuggestExtensions: false
+  Exclude:
+    - fonts/*.rb         # generated, intentionally long
+    - test/assert.rb     # vendored verbatim from mruby (MIT)
+    - tasks/**/*         # local notes and cloned references
+    - utils/bdf_*.rb     # CRuby helper scripts, kept as-is
+
+# Whole categories ------------------------------------------------------
+
+Metrics:
+  Enabled: false         # render_glyph etc. are intentionally long
+
+Performance:
+  Enabled: false         # mruby's interpreter does not benefit from
+                         # CRuby-tuned suggestions, and the perf cops
+                         # often push patterns that mruby does not have
+
+# Targeted cops ---------------------------------------------------------
+
+Layout/LineLength:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false         # we don't write top-level class docs
+
+Style/FrozenStringLiteralComment:
+  Enabled: false         # not meaningful for mruby
+
+Style/MutableConstant:
+  Enabled: false         # we intentionally mutate / reassign constants
+                         # from CLI overrides
+
+Style/CaseEquality:
+  Enabled: false         # mruby subset behavior may differ
+
+Style/HashEachMethods:
+  Enabled: false         # mruby's each_* surface is narrower
+
+Style/SoleNestedConditional:
+  Enabled: false
+
+Style/SafeNavigation:
+  Enabled: false         # mruby's &. support is fine but rewriting
+                         # explicit `if foo && foo.bar` adds noise here
+
+Style/IfWithBooleanLiteralBranches:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  Enabled: false
+
+Style/EndlessMethod:
+  Enabled: false         # mruby サブセットでの互換性が要確認、避けておく
+
+Style/GlobalVars:
+  Exclude:
+    - test/helper.rb     # $capture_buf は capture { } を実現する意図的なグローバル
+
+Style/GlobalStdStream:
+  Enabled: false         # STDOUT は mruby でも安定。$stdout への置換は強制しない
+
+Style/StringConcatenation:
+  Exclude:
+    - test/test_smoke.rb # "a" + "b" は mruby の文字列連結を確認する smoke test
+
+Style/NumericPredicate:
+  Enabled: false         # `> 0` を `.positive?` に直す系は冗長になりがち
+
+Style/RedundantCondition:
+  Enabled: false         # OPTS[:x] && OPTS[:x] > 10 のような明示パターンを残したい
+
+Naming/MethodParameterName:
+  MinNameLength: 1       # x, y, w, h, r, i など描画 / 数値慣用の短名を許す

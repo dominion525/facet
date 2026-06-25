@@ -51,6 +51,7 @@ begin
     while (line = STDIN.gets)
       new_idx = process_input(line.chomp, idx, PAGES.length)
       break if new_idx.nil?
+
       if new_idx != idx
         idx = new_idx
         render(idx)

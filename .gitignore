@@ -1,2 +1,4 @@
 tasks/
 *.mrb
+vendor/bundle/
+.bundle/

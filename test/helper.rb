@@ -37,15 +37,13 @@ def puts(*args)
         $capture_buf << "\n" unless s.end_with?("\n")
       end
     end
+  elsif args.empty?
+    STDOUT.write("\n")
   else
-    if args.empty?
-      STDOUT.write("\n")
-    else
-      args.each do |a|
-        s = a.to_s
-        STDOUT.write(s)
-        STDOUT.write("\n") unless s.end_with?("\n")
-      end
+    args.each do |a|
+      s = a.to_s
+      STDOUT.write(s)
+      STDOUT.write("\n") unless s.end_with?("\n")
     end
   end
   nil

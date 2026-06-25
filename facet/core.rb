@@ -3,16 +3,16 @@ STDOUT.sync = true
 CSI = "\e["
 
 COLORS = {
-  reset:   "#{CSI}0m",
-  bold:    "#{CSI}1m",
-  dim:     "#{CSI}2m",
-  red:     "#{CSI}31m",
-  green:   "#{CSI}32m",
-  yellow:  "#{CSI}33m",
-  blue:    "#{CSI}34m",
+  reset: "#{CSI}0m",
+  bold: "#{CSI}1m",
+  dim: "#{CSI}2m",
+  red: "#{CSI}31m",
+  green: "#{CSI}32m",
+  yellow: "#{CSI}33m",
+  blue: "#{CSI}34m",
   magenta: "#{CSI}35m",
-  cyan:    "#{CSI}36m",
-  white:   "#{CSI}37m",
+  cyan: "#{CSI}36m",
+  white: "#{CSI}37m",
 }
 def row_bits(str, offset, bpr)
   row = 0
@@ -41,14 +41,14 @@ def process_input(key, idx, total_pages)
 end
 
 FLAG_OPTS = {
-  "-c"          => :calibrate,
+  "-c" => :calibrate,
   "--calibrate" => :calibrate,
 }
 
 VALUE_OPTS = {
-  "-b"         => :baseline,
+  "-b" => :baseline,
   "--baseline" => :baseline,
-  "-d"         => :duration,
+  "-d" => :duration,
   "--duration" => :duration,
 }
 
@@ -137,15 +137,21 @@ def render_glyph(text, en_font: nil, jp_font: nil, color: :white, scale: 1)
   while r < h
     cps.each do |cp|
       if cp < 0x80 && en_font
-        bits = (cp >= 0x20 && cp <= 0x7e && r < en_h) ?
-                 row_bits(en_data, (cp - 0x20) * en_bpc + r * en_bpr, en_bpr) : 0
+        bits = if cp >= 0x20 && cp <= 0x7e && r < en_h
+                 row_bits(en_data, (cp - 0x20) * en_bpc + r * en_bpr, en_bpr)
+               else
+                 0
+               end
         emit_row(bits, en_w, en_bit_w, 1)
       elsif jp_font
         jis   = jp_u2j[cp]
         bytes = jis ? jp_data[jis] : nil
         orig  = r / scale
-        bits  = (bytes && orig < jp_src_h) ?
-                  row_bits(bytes, orig * jp_bpr, jp_bpr) : 0
+        bits  = if bytes && orig < jp_src_h
+                  row_bits(bytes, orig * jp_bpr, jp_bpr)
+                else
+                  0
+                end
         emit_row(bits, jp_w, jp_bit_w, scale)
       end
     end
@@ -161,7 +167,7 @@ def emit_row(bits, w, bit_w, scale)
   x = 0
   while x < w
     shift = bit_w - 1 - (x / scale)
-    print ((bits >> shift) & 1 == 1) ? "█" : " "
+    print (bits >> shift) & 1 == 1 ? "█" : " "
     x += 1
   end
 end
@@ -193,9 +199,7 @@ def render_sprite(rows, x)
       ch = row[i]
       if ch == "."
         n = 1
-        while i + n < len && row[i + n] == "."
-          n += 1
-        end
+        n += 1 while i + n < len && row[i + n] == "."
         print "#{CSI}0m" if prev
         prev = nil
         print "#{CSI}#{n}C"
