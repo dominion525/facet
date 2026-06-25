@@ -49,14 +49,10 @@ begin
     render(idx)
 
     while (line = STDIN.gets)
-      case line.chomp
-      when "q"
-        break
-      when "l", ""
-        idx += 1 if idx < PAGES.length - 1
-        render(idx)
-      when "h"
-        idx -= 1 if idx > 0
+      new_idx = process_input(line.chomp, idx, PAGES.length)
+      break if new_idx.nil?
+      if new_idx != idx
+        idx = new_idx
         render(idx)
       end
     end

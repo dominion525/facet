@@ -24,6 +24,22 @@ def row_bits(str, offset, bpr)
   row
 end
 
+# Given the current page idx and a chomped key, return the new idx (or
+# nil to break out of the slide loop).
+# Pure function: no IO, no globals.
+def process_input(key, idx, total_pages)
+  case key
+  when "q"
+    nil
+  when "l", ""
+    idx < total_pages - 1 ? idx + 1 : idx
+  when "h"
+    idx > 0 ? idx - 1 : idx
+  else
+    idx
+  end
+end
+
 FLAG_OPTS = {
   "-c"          => :calibrate,
   "--calibrate" => :calibrate,

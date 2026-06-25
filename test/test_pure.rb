@@ -107,3 +107,35 @@ assert('parse_args: value option without a following value is skipped') do
   r = parse_args(["-b"])
   assert_nil r[:baseline]
 end
+
+assert('process_input: q returns nil (quit signal)') do
+  assert_nil process_input("q", 0, 9)
+  assert_nil process_input("q", 5, 9)
+end
+
+assert('process_input: l advances by 1') do
+  assert_equal 1, process_input("l", 0, 9)
+  assert_equal 5, process_input("l", 4, 9)
+end
+
+assert('process_input: Enter (empty key) advances like l') do
+  assert_equal 1, process_input("", 0, 9)
+end
+
+assert('process_input: l at the last page stays put') do
+  assert_equal 8, process_input("l", 8, 9)
+end
+
+assert('process_input: h moves back') do
+  assert_equal 0, process_input("h", 1, 9)
+  assert_equal 4, process_input("h", 5, 9)
+end
+
+assert('process_input: h at the first page stays put') do
+  assert_equal 0, process_input("h", 0, 9)
+end
+
+assert('process_input: unknown keys keep idx') do
+  assert_equal 3, process_input("x", 3, 9)
+  assert_equal 3, process_input("help", 3, 9)
+end
