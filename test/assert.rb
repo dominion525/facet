@@ -1,3 +1,8 @@
+# Vendored verbatim from mruby (test/assert.rb).
+# Upstream: https://github.com/mruby/mruby
+# License : MIT, Copyright (c) 2010- mruby developers
+# Full license text is reproduced in LICENSE-3rdparty.
+
 $undefined = Object.new
 $ok_test = 0
 $ko_test = 0
