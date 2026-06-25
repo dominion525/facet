@@ -48,27 +48,34 @@ def utf8_codepoints(text)
   result
 end
 
-def render_glyph(text, font: TITLE_FONT, color: :yellow)
-  w     = font[:width]
-  h     = font[:height]
-  bpr   = font[:bytes_per_row]
-  bpc   = font[:bytes_per_char]
-  bit_w = bpr * 8
-  bs    = text.bytes
+# Single rendering primitive used for both titles and body lines.
+# Each codepoint is drawn using `en_font` when ASCII (<0x80) and `jp_font`
+# otherwise. `scale` only applies to the jp side (terminus already provides
+# 6x12..16x32, while shinonome is only 12 / 16 so 24 / 32 are scaled).
+def render_glyph(text, en_font: nil, jp_font: nil, color: :white, scale: 1)
+  en_h    = en_font ? en_font[:height] : 0
+  jp_h    = jp_font ? jp_font[:height] * scale : 0
+  h       = en_h > jp_h ? en_h : jp_h
+  cps     = utf8_codepoints(text)
   print COLORS[color]
   r = 0
   while r < h
-    bs.each do |cp|
-      if cp < 0x20 || cp > 0x7e
-        bits = 0
-      else
-        bits = row_bits(font[:data], (cp - 0x20) * bpc + r * bpr, bpr)
-      end
-      x = 0
-      while x < w
-        shift = bit_w - 1 - x
-        print ((bits >> shift) & 1 == 1) ? "█" : " "
-        x += 1
+    cps.each do |cp|
+      if cp < 0x80 && en_font
+        w    = en_font[:width]
+        bpr  = en_font[:bytes_per_row]
+        bits = (cp >= 0x20 && cp <= 0x7e && r < en_font[:height]) ?
+                 row_bits(en_font[:data], (cp - 0x20) * en_font[:bytes_per_char] + r * bpr, bpr) : 0
+        emit_row(bits, w, bpr * 8, 1)
+      elsif jp_font
+        w     = jp_font[:width] * scale
+        bpr   = jp_font[:bytes_per_row]
+        jis   = jp_font[:u2j][cp]
+        bytes = jis ? jp_font[:data][jis] : nil
+        orig  = r / scale
+        bits  = (bytes && orig < jp_font[:height]) ?
+                  row_bits(bytes, orig * bpr, bpr) : 0
+        emit_row(bits, w, bpr * 8, scale)
       end
     end
     puts
@@ -77,43 +84,23 @@ def render_glyph(text, font: TITLE_FONT, color: :yellow)
   print COLORS[:reset]
 end
 
-def render_jp_glyph(text, font: JP_FONT, color: :yellow, scale: JP_SCALE)
-  w        = font[:width]
-  h        = font[:height]
-  bpr      = font[:bytes_per_row]
-  bit_w    = bpr * 8
-  cps      = utf8_codepoints(text)
-  u2j      = font[:u2j]
-  data     = font[:data]
-  scaled_w = w * scale
-  scaled_h = h * scale
-  print COLORS[color]
-  r = 0
-  while r < scaled_h
-    cps.each do |cp|
-      jis   = u2j[cp]
-      bytes = jis ? data[jis] : nil
-      orig  = r / scale
-      bits  = (bytes && orig < h) ? row_bits(bytes, orig * bpr, bpr) : 0
-      x = 0
-      while x < scaled_w
-        shift = bit_w - 1 - (x / scale)
-        print ((bits >> shift) & 1 == 1) ? "█" : " "
-        x += 1
-      end
-    end
-    puts
-    r += 1
+# Emit `w` cells from `bits`. `bit_w` is the bit width of one source row;
+# `scale` (>=1) horizontally repeats each source pixel.
+def emit_row(bits, w, bit_w, scale)
+  x = 0
+  while x < w
+    shift = bit_w - 1 - (x / scale)
+    print ((bits >> shift) & 1 == 1) ? "█" : " "
+    x += 1
   end
-  print COLORS[:reset]
 end
 
 def render_title(text)
-  if text.bytes.any? { |b| b >= 0x80 }
-    render_jp_glyph(text)
-  else
-    render_glyph(text)
-  end
+  render_glyph(text, en_font: TITLE_FONT, jp_font: JP_FONT, color: :yellow, scale: JP_SCALE)
+end
+
+def render_body(text, color: :white)
+  render_glyph(text, en_font: BODY_EN_FONT, jp_font: BODY_JP_FONT, color: color)
 end
 
 def sprite_width(rows)
@@ -157,61 +144,14 @@ def render_sprite(rows, x)
   end
 end
 
-def render_mixed_glyph(text, en_font: BODY_EN_FONT, jp_font: BODY_JP_FONT, color: :white)
-  h     = en_font[:height]
-  bpr_e = en_font[:bytes_per_row]
-  bpr_j = jp_font[:bytes_per_row]
-  bit_e = bpr_e * 8
-  bit_j = bpr_j * 8
-  w_e   = en_font[:width]
-  w_j   = jp_font[:width]
-  bpc_e = en_font[:bytes_per_char]
-  data_e = en_font[:data]
-  data_j = jp_font[:data]
-  u2j    = jp_font[:u2j]
-  cps   = utf8_codepoints(text)
-  print COLORS[color]
-  r = 0
-  while r < h
-    cps.each do |cp|
-      if cp < 0x80
-        if cp >= 0x20 && cp <= 0x7e
-          bits = row_bits(data_e, (cp - 0x20) * bpc_e + r * bpr_e, bpr_e)
-        else
-          bits = 0
-        end
-        x = 0
-        while x < w_e
-          shift = bit_e - 1 - x
-          print ((bits >> shift) & 1 == 1) ? "█" : " "
-          x += 1
-        end
-      else
-        jis = u2j[cp]
-        bytes = jis ? data_j[jis] : nil
-        bits = bytes ? row_bits(bytes, r * bpr_j, bpr_j) : 0
-        x = 0
-        while x < w_j
-          shift = bit_j - 1 - x
-          print ((bits >> shift) & 1 == 1) ? "█" : " "
-          x += 1
-        end
-      end
-    end
-    puts
-    r += 1
-  end
-  print COLORS[:reset]
-end
-
 def render_line(line)
   if line.empty?
     puts
   elsif line.start_with?("-")
     rest = line[1..].lstrip
-    render_mixed_glyph("• #{rest}", color: :cyan)
+    render_body("• #{rest}", color: :cyan)
   else
-    render_mixed_glyph("  #{line}")
+    render_body("  #{line}")
   end
 end
 
@@ -298,7 +238,7 @@ def render_calibration
   i = 1
   while i <= body_capacity
     line = facts[i - 1] || "  row #{i}"
-    render_mixed_glyph(line)
+    render_body(line)
     i += 1
   end
 
