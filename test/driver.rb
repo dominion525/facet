@@ -7,6 +7,8 @@
 # the `$ok_test` / `$ko_test` / ... globals at load time.
 
 def t_print(*args)
-  args.each { |a| print(a.to_s) }
+  # Use STDOUT.write directly so that test/helper.rb redefining `print`
+  # for output capture cannot accidentally swallow the test result.
+  args.each { |a| STDOUT.write(a.to_s) }
   nil
 end

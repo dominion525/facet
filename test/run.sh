@@ -11,6 +11,7 @@ trap 'rm -f "$out"' EXIT
 mrbc -o "$out" \
   test/driver.rb \
   test/assert.rb \
+  test/helper.rb \
   facet/core.rb \
   test/test_*.rb \
   test/finalize.rb
