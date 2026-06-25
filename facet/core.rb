@@ -24,6 +24,44 @@ def row_bits(str, offset, bpr)
   row
 end
 
+FLAG_OPTS = {
+  "-c"          => :calibrate,
+  "--calibrate" => :calibrate,
+}
+
+VALUE_OPTS = {
+  "-b"         => :baseline,
+  "--baseline" => :baseline,
+  "-d"         => :duration,
+  "--duration" => :duration,
+}
+
+# Parse CLI args into a Hash. Unknown switches are silently ignored.
+#   { calibrate: bool, baseline: Int?, duration: Int?, cols: Int?, rows: Int? }
+def parse_args(argv)
+  result     = { calibrate: false }
+  positional = []
+  i = 0
+  while i < argv.size
+    a = argv[i]
+    if FLAG_OPTS.key?(a)
+      result[FLAG_OPTS[a]] = true
+      i += 1
+    elsif VALUE_OPTS.key?(a) && argv[i + 1]
+      result[VALUE_OPTS[a]] = argv[i + 1].to_i
+      i += 2
+    elsif a.start_with?("-")
+      i += 1
+    else
+      positional << a
+      i += 1
+    end
+  end
+  result[:cols] = positional[0].to_i if positional[0]
+  result[:rows] = positional[1].to_i if positional[1]
+  result
+end
+
 def utf8_codepoints(text)
   result = []
   bs = text.bytes

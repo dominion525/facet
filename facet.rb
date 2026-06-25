@@ -20,52 +20,20 @@ JP_FONT, JP_SCALE = case TITLE_FONT[:height]
 
 START_TIME = Time.now.to_i
 
-# CLI args
+# CLI args (parsed by parse_args in facet/core.rb)
 #   -c / --calibrate            switch to the calibration screen
 #   COLS ROWS                   override SCREEN_COLS / SCREEN_ROWS (positional)
 #   --baseline N / -b N         override SPRITE_BASELINE (sprite foot row)
-#   --duration N / -d N         override DURATION_SEC (camerlengo goal time)
-#                                baseline can be below SCREEN_ROWS, useful for
+#                                can be below SCREEN_ROWS, useful for
 #                                full-screen terminals where you want the
 #                                sprites pinned to the actual bottom edge.
-calibrate           = false
-sprite_baseline_arg = nil
-duration_arg        = nil
-positional          = []
-i = 0
-while i < ARGV.size
-  a = ARGV[i]
-  if a == "-c" || a == "--calibrate"
-    calibrate = true
-    i += 1
-  elsif (a == "--baseline" || a == "-b") && ARGV[i + 1]
-    sprite_baseline_arg = ARGV[i + 1].to_i
-    i += 2
-  elsif (a == "--duration" || a == "-d") && ARGV[i + 1]
-    duration_arg = ARGV[i + 1].to_i
-    i += 2
-  elsif a.start_with?("-")
-    i += 1
-  else
-    positional << a
-    i += 1
-  end
-end
+#   --duration N / -d N         override DURATION_SEC (camerlengo goal time)
+OPTS = parse_args(ARGV)
 
-if positional.size >= 2
-  cols_arg = positional[0].to_i
-  rows_arg = positional[1].to_i
-  SCREEN_COLS = cols_arg if cols_arg > 10
-  SCREEN_ROWS = rows_arg if rows_arg > 10
-end
-
-if sprite_baseline_arg && sprite_baseline_arg > 10
-  SPRITE_BASELINE = sprite_baseline_arg
-end
-
-if duration_arg && duration_arg > 0
-  DURATION_SEC = duration_arg
-end
+SCREEN_COLS     = OPTS[:cols]     if OPTS[:cols]     && OPTS[:cols]     > 10
+SCREEN_ROWS     = OPTS[:rows]     if OPTS[:rows]     && OPTS[:rows]     > 10
+SPRITE_BASELINE = OPTS[:baseline] if OPTS[:baseline] && OPTS[:baseline] > 10
+DURATION_SEC    = OPTS[:duration] if OPTS[:duration] && OPTS[:duration] > 0
 
 SPRITE_TOP_ROW = SPRITE_BASELINE - SPRITE_HEIGHT
 
@@ -73,7 +41,7 @@ begin
   print "#{CSI}?1049h"  # DECSET 1049: alt screen
   print "#{CSI}?25l"    # hide cursor
 
-  if calibrate
+  if OPTS[:calibrate]
     render_calibration
     STDIN.gets
   else

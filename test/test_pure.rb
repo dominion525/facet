@@ -49,3 +49,61 @@ end
 assert('sprite_width: all empty') do
   assert_equal 0, sprite_width(["", "", ""])
 end
+
+assert('parse_args: empty argv') do
+  r = parse_args([])
+  assert_equal false, r[:calibrate]
+  assert_nil r[:baseline]
+  assert_nil r[:duration]
+  assert_nil r[:cols]
+  assert_nil r[:rows]
+end
+
+assert('parse_args: short flag -c') do
+  assert_equal true, parse_args(["-c"])[:calibrate]
+end
+
+assert('parse_args: long flag --calibrate') do
+  assert_equal true, parse_args(["--calibrate"])[:calibrate]
+end
+
+assert('parse_args: -b and --baseline both produce :baseline') do
+  assert_equal 130, parse_args(["-b", "130"])[:baseline]
+  assert_equal 130, parse_args(["--baseline", "130"])[:baseline]
+end
+
+assert('parse_args: -d and --duration both produce :duration') do
+  assert_equal 600, parse_args(["-d", "600"])[:duration]
+  assert_equal 600, parse_args(["--duration", "600"])[:duration]
+end
+
+assert('parse_args: positional COLS ROWS') do
+  r = parse_args(["540", "110"])
+  assert_equal 540, r[:cols]
+  assert_equal 110, r[:rows]
+end
+
+assert('parse_args: only first 2 positional matter') do
+  r = parse_args(["360", "90", "extra"])
+  assert_equal 360, r[:cols]
+  assert_equal 90, r[:rows]
+end
+
+assert('parse_args: combined flags + positionals + values') do
+  r = parse_args(["-c", "540", "110", "-b", "130", "-d", "600"])
+  assert_equal true, r[:calibrate]
+  assert_equal 540, r[:cols]
+  assert_equal 110, r[:rows]
+  assert_equal 130, r[:baseline]
+  assert_equal 600, r[:duration]
+end
+
+assert('parse_args: unknown switches are silently ignored') do
+  r = parse_args(["--unknown", "-c", "--something"])
+  assert_equal true, r[:calibrate]
+end
+
+assert('parse_args: value option without a following value is skipped') do
+  r = parse_args(["-b"])
+  assert_nil r[:baseline]
+end
