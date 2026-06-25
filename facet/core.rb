@@ -63,7 +63,7 @@ def parse_args(argv)
     if FLAG_OPTS.key?(a)
       result[FLAG_OPTS[a]] = true
       i += 1
-    elsif VALUE_OPTS.key?(a) && argv[i + 1]
+    elsif VALUE_OPTS.key?(a) && argv[i + 1] && !argv[i + 1].start_with?("-")
       result[VALUE_OPTS[a]] = argv[i + 1].to_i
       i += 2
     elsif a.start_with?("-")
@@ -107,29 +107,46 @@ end
 # otherwise. `scale` only applies to the jp side (terminus already provides
 # 6x12..16x32, while shinonome is only 12 / 16 so 24 / 32 are scaled).
 def render_glyph(text, en_font: nil, jp_font: nil, color: :white, scale: 1)
-  en_h    = en_font ? en_font[:height] : 0
-  jp_h    = jp_font ? jp_font[:height] * scale : 0
-  h       = en_h > jp_h ? en_h : jp_h
-  cps     = utf8_codepoints(text)
+  # Hoist all font hash lookups out of the per-pixel loops.
+  if en_font
+    en_w     = en_font[:width]
+    en_h     = en_font[:height]
+    en_bpr   = en_font[:bytes_per_row]
+    en_bpc   = en_font[:bytes_per_char]
+    en_data  = en_font[:data]
+    en_bit_w = en_bpr * 8
+  else
+    en_h = 0
+  end
+  if jp_font
+    jp_src_w = jp_font[:width]
+    jp_src_h = jp_font[:height]
+    jp_w     = jp_src_w * scale
+    jp_h     = jp_src_h * scale
+    jp_bpr   = jp_font[:bytes_per_row]
+    jp_data  = jp_font[:data]
+    jp_u2j   = jp_font[:u2j]
+    jp_bit_w = jp_bpr * 8
+  else
+    jp_h = 0
+  end
+  h   = en_h > jp_h ? en_h : jp_h
+  cps = utf8_codepoints(text)
   print COLORS[color]
   r = 0
   while r < h
     cps.each do |cp|
       if cp < 0x80 && en_font
-        w    = en_font[:width]
-        bpr  = en_font[:bytes_per_row]
-        bits = (cp >= 0x20 && cp <= 0x7e && r < en_font[:height]) ?
-                 row_bits(en_font[:data], (cp - 0x20) * en_font[:bytes_per_char] + r * bpr, bpr) : 0
-        emit_row(bits, w, bpr * 8, 1)
+        bits = (cp >= 0x20 && cp <= 0x7e && r < en_h) ?
+                 row_bits(en_data, (cp - 0x20) * en_bpc + r * en_bpr, en_bpr) : 0
+        emit_row(bits, en_w, en_bit_w, 1)
       elsif jp_font
-        w     = jp_font[:width] * scale
-        bpr   = jp_font[:bytes_per_row]
-        jis   = jp_font[:u2j][cp]
-        bytes = jis ? jp_font[:data][jis] : nil
+        jis   = jp_u2j[cp]
+        bytes = jis ? jp_data[jis] : nil
         orig  = r / scale
-        bits  = (bytes && orig < jp_font[:height]) ?
-                  row_bits(bytes, orig * bpr, bpr) : 0
-        emit_row(bits, w, bpr * 8, scale)
+        bits  = (bytes && orig < jp_src_h) ?
+                  row_bits(bytes, orig * jp_bpr, jp_bpr) : 0
+        emit_row(bits, jp_w, jp_bit_w, scale)
       end
     end
     puts
@@ -203,7 +220,8 @@ def render_line(line)
     puts
   elsif line.start_with?("-")
     rest = line[1..].lstrip
-    render_body("• #{rest}", color: :cyan)
+    # `・` (U+30FB, JIS 0x2126) is in shinonome; U+2022 BULLET is not in JIS X 0208.
+    render_body("・ #{rest}", color: :cyan)
   else
     render_body("  #{line}")
   end

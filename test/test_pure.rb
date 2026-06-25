@@ -108,6 +108,20 @@ assert('parse_args: value option without a following value is skipped') do
   assert_nil r[:baseline]
 end
 
+assert('parse_args: value option does not consume a following switch') do
+  # Without protection, "-b -c" would treat "-c" as the baseline value
+  # (.to_i == 0) and the calibrate flag would never be set.
+  r = parse_args(["-b", "-c"])
+  assert_equal true, r[:calibrate]
+  assert_nil r[:baseline]
+end
+
+assert('parse_args: value option still accepts a numeric value') do
+  r = parse_args(["-b", "130", "-c"])
+  assert_equal 130, r[:baseline]
+  assert_equal true, r[:calibrate]
+end
+
 assert('process_input: q returns nil (quit signal)') do
   assert_nil process_input("q", 0, 9)
   assert_nil process_input("q", 5, 9)
