@@ -9,7 +9,7 @@
 #   Sprites (hasumikin) : SPRITE_RAPIKO / SPRITE_CAMERLENGO
 
 # ---------- layout ----------
-SCREEN_COLS     = 540  # assumed terminal width in cells (Rapicco-scale, 1 cell = 1 px)
+SCREEN_COLS     = 480  # assumed terminal width in cells (Rapicco-scale, 1 cell = 1 px)
 SCREEN_ROWS     = 110  # assumed terminal height in cells
 SPRITE_BASELINE = SCREEN_ROWS # rapiko / camerlengo の足元 y。下端固定なら SCREEN_ROWS
 DURATION_SEC    = 30   # total presentation time the camerlengo bar fills
