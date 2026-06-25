@@ -14,16 +14,37 @@ AllCops:
     - test/assert.rb     # vendored verbatim from mruby (MIT)
     - tasks/**/*         # local notes and cloned references
     - utils/bdf_*.rb     # CRuby helper scripts, kept as-is
+    - vendor/bundle/**/* # installed gems
+    - vendor/**/*
 
 # Whole categories ------------------------------------------------------
-
-Metrics:
-  Enabled: false         # render_glyph etc. are intentionally long
 
 Performance:
   Enabled: false         # mruby's interpreter does not benefit from
                          # CRuby-tuned suggestions, and the perf cops
                          # often push patterns that mruby does not have
+
+# Metrics は基本 on にして、本当に長い描画関数だけ inline disable する
+# (ファイル単位ではなく関数単位で例外を明示)。値は default より少し緩め。
+
+Metrics/MethodLength:
+  Max: 30
+
+Metrics/AbcSize:
+  Max: 45
+
+Metrics/CyclomaticComplexity:
+  Max: 12
+
+Metrics/PerceivedComplexity:
+  Max: 12
+
+Metrics/BlockLength:
+  Exclude:
+    - slide.rb           # PAGES のリテラル定義が長い
+
+Metrics/ClassLength:
+  Enabled: false         # トップレベルの def 群でクラスは無い
 
 # Targeted cops ---------------------------------------------------------
 

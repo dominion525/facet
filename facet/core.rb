@@ -106,6 +106,7 @@ end
 # Each codepoint is drawn using `en_font` when ASCII (<0x80) and `jp_font`
 # otherwise. `scale` only applies to the jp side (terminus already provides
 # 6x12..16x32, while shinonome is only 12 / 16 so 24 / 32 are scaled).
+# rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 def render_glyph(text, en_font: nil, jp_font: nil, color: :white, scale: 1)
   # Hoist all font hash lookups out of the per-pixel loops.
   if en_font
@@ -160,6 +161,8 @@ def render_glyph(text, en_font: nil, jp_font: nil, color: :white, scale: 1)
   end
   print COLORS[:reset]
 end
+
+# rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
 # Emit `w` cells from `bits`. `bit_w` is the bit width of one source row;
 # `scale` (>=1) horizontally repeats each source pixel.
@@ -259,6 +262,7 @@ end
 # Calibration screen: paints a "+" at each of the 4 SCREEN_COLS x SCREEN_ROWS
 # corners and rulers along the top/left edges so you can match the constants
 # in slide.rb to your actual terminal size.
+# rubocop:disable Metrics/AbcSize, Metrics/MethodLength
 def render_calibration
   print "#{CSI}2J#{CSI}H"
 
@@ -329,3 +333,4 @@ def render_calibration
   print "#{CSI}#{camerlengo_y};1H"
   render_sprite(SPRITE_CAMERLENGO, camerlengo_x)
 end
+# rubocop:enable Metrics/AbcSize, Metrics/MethodLength
