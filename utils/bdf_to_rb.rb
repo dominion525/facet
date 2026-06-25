@@ -63,5 +63,5 @@ ascii.each_with_index do |cp, i|
   label = (cp == 0x20 ? "space" : cp.chr)
   puts %Q{    "#{esc}"#{comma} # 0x%02x %s} % [cp, label]
 end
-puts "  ].join.bytes,"
+puts "  ].join,"
 puts "}"

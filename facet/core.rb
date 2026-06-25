@@ -14,17 +14,7 @@ COLORS = {
   cyan:    "#{CSI}36m",
   white:   "#{CSI}37m",
 }
-def row_bits(data, offset, bpr)
-  row = 0
-  i = 0
-  while i < bpr
-    row = (row << 8) | (data[offset + i] || 0)
-    i += 1
-  end
-  row
-end
-
-def row_bits_str(str, offset, bpr)
+def row_bits(str, offset, bpr)
   row = 0
   i = 0
   while i < bpr
@@ -104,7 +94,7 @@ def render_jp_glyph(text, font: JP_FONT, color: :yellow, scale: JP_SCALE)
       jis   = u2j[cp]
       bytes = jis ? data[jis] : nil
       orig  = r / scale
-      bits  = (bytes && orig < h) ? row_bits_str(bytes, orig * bpr, bpr) : 0
+      bits  = (bytes && orig < h) ? row_bits(bytes, orig * bpr, bpr) : 0
       x = 0
       while x < scaled_w
         shift = bit_w - 1 - (x / scale)
@@ -199,7 +189,7 @@ def render_mixed_glyph(text, en_font: BODY_EN_FONT, jp_font: BODY_JP_FONT, color
       else
         jis = u2j[cp]
         bytes = jis ? data_j[jis] : nil
-        bits = bytes ? row_bits_str(bytes, r * bpr_j, bpr_j) : 0
+        bits = bytes ? row_bits(bytes, r * bpr_j, bpr_j) : 0
         x = 0
         while x < w_j
           shift = bit_j - 1 - x

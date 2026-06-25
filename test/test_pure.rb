@@ -22,37 +22,20 @@ assert('utf8_codepoints: empty string') do
   assert_equal [], utf8_codepoints("")
 end
 
-assert('row_bits: single byte row') do
-  assert_equal 0x12, row_bits([0x12, 0x34], 0, 1)
+assert('row_bits: single byte') do
+  assert_equal 0x12, row_bits("\x12\x34", 0, 1)
 end
 
-assert('row_bits: two-byte row pads to a 16-bit int') do
-  assert_equal 0x1234, row_bits([0x12, 0x34], 0, 2)
+assert('row_bits: two bytes pad to a 16-bit int') do
+  assert_equal 0x1234, row_bits("\x12\x34", 0, 2)
 end
 
 assert('row_bits: respects offset') do
-  assert_equal 0x1234, row_bits([0xFF, 0x12, 0x34], 1, 2)
+  assert_equal 0x1234, row_bits("\xFF\x12\x34", 1, 2)
 end
 
-assert('row_bits: out-of-range bytes are treated as 0') do
-  # data has only 1 byte but bpr=2 → second byte should default to 0
-  assert_equal 0x1200, row_bits([0x12], 0, 2)
-end
-
-assert('row_bits_str: single byte') do
-  assert_equal 0x12, row_bits_str("\x12\x34", 0, 1)
-end
-
-assert('row_bits_str: two bytes') do
-  assert_equal 0x1234, row_bits_str("\x12\x34", 0, 2)
-end
-
-assert('row_bits_str: offset') do
-  assert_equal 0x1234, row_bits_str("\xFF\x12\x34", 1, 2)
-end
-
-assert('row_bits_str: out-of-range bytes default to 0') do
-  assert_equal 0x1200, row_bits_str("\x12", 0, 2)
+assert('row_bits: out-of-range bytes default to 0') do
+  assert_equal 0x1200, row_bits("\x12", 0, 2)
 end
 
 assert('sprite_width: max row length wins') do
