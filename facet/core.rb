@@ -226,9 +226,18 @@ def render_line(line)
   if line.empty?
     puts
   elsif line.start_with?("-")
-    rest = line[1..].lstrip
-    # `・` (U+30FB, JIS 0x2126) is in shinonome; U+2022 BULLET is not in JIS X 0208.
-    render_body("・ #{rest}", color: :cyan)
+    rest      = line[1..].lstrip
+    bullet_w  = sprite_width(SPRITE_BULLET)
+    bullet_h  = SPRITE_BULLET.size
+    body_h    = BODY_EN_FONT[:height]
+    body_w    = BODY_EN_FONT[:width]
+    offset_y  = (body_h - bullet_h) / 2
+    pad_chars = (bullet_w + body_w) / body_w + 1
+    print "#{CSI}s"
+    print "#{CSI}#{offset_y}B" if offset_y > 0
+    render_sprite(SPRITE_BULLET, 1)
+    print "#{CSI}u"
+    render_body("#{" " * pad_chars}#{rest}", color: :white)
   else
     render_body("  #{line}")
   end

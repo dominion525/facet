@@ -40,3 +40,11 @@ SPRITE_CAMERLENGO = [
   "yygggggggggggg",
   "...yyy......yyy",
 ]
+
+SPRITE_BULLET = [
+  "......rrrr",
+  "....rrwwrrrr",
+  "...rrrrrrrrrr...",
+  ".....rrrrrr",
+  ".......rr",
+]
