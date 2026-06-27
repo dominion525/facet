@@ -50,18 +50,13 @@ bytes_per_char = bytes_per_row * height
 puts "# Generated from #{File.basename(bdf_path)} (terminus 4.49.1)"
 puts "# Licensed under the SIL Open Font License, Version 1.1"
 puts "# Range: 0x20..0x7E (ASCII printable)"
+puts "# Data layout: 95 chars * #{bytes_per_char} bytes each, ordered cp 0x20..0x7E"
+esc = ascii.flat_map { |cp| chars[cp] || Array.new(bytes_per_char, 0) }
+           .map { |b| "\\x%02x" % b }.join
 puts "#{const} = {"
 puts "  width:          #{width},"
 puts "  height:         #{height},"
 puts "  bytes_per_row:  #{bytes_per_row},"
 puts "  bytes_per_char: #{bytes_per_char},"
-puts "  data: ["
-ascii.each_with_index do |cp, i|
-  rows = chars[cp] || Array.new(bytes_per_char, 0)
-  esc  = rows.map { |b| "\\x%02x" % b }.join
-  comma = (i == ascii.size - 1) ? "" : ","
-  label = (cp == 0x20 ? "space" : cp.chr)
-  puts %Q{    "#{esc}"#{comma} # 0x%02x %s} % [cp, label]
-end
-puts "  ].join,"
+puts %Q{  data: "#{esc}",}
 puts "}"
