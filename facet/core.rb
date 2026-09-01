@@ -107,7 +107,7 @@ end
 # otherwise. `scale` only applies to the jp side (terminus already provides
 # 6x12..16x32, while shinonome is only 12 / 16 so 24 / 32 are scaled).
 # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
-def render_glyph(text, en_font: nil, jp_font: nil, color: :white, scale: 1)
+def render_glyph(text, en_font, jp_font, color, scale)
   # Hoist all font hash lookups out of the per-pixel loops.
   if en_font
     en_w     = en_font[:width]
@@ -176,11 +176,11 @@ def emit_row(bits, w, bit_w, scale)
 end
 
 def render_title(text)
-  render_glyph(text, en_font: TITLE_FONT, jp_font: JP_FONT, color: :yellow, scale: JP_SCALE)
+  render_glyph(text, TITLE_FONT, JP_FONT, :yellow, JP_SCALE)
 end
 
-def render_body(text, color: :white)
-  render_glyph(text, en_font: BODY_EN_FONT, jp_font: BODY_JP_FONT, color: color)
+def render_body(text, color)
+  render_glyph(text, BODY_EN_FONT, BODY_JP_FONT, color, 1)
 end
 
 def sprite_width(rows)
@@ -226,7 +226,7 @@ def render_line(line)
   if line.empty?
     puts
   elsif line.start_with?("-")
-    rest      = line[1..].lstrip
+    rest      = line[1, line.length - 1].lstrip
     bullet_w  = sprite_width(SPRITE_BULLET)
     bullet_h  = SPRITE_BULLET.size
     body_h    = BODY_EN_FONT[:height]
@@ -237,9 +237,9 @@ def render_line(line)
     print "#{CSI}#{offset_y}B" if offset_y > 0
     render_sprite(SPRITE_BULLET, 1)
     print "#{CSI}u"
-    render_body("#{" " * pad_chars}#{rest}", color: :white)
+    render_body("#{' ' * pad_chars}#{rest}", :white)
   else
-    render_body("  #{line}")
+    render_body("  #{line}", :white)
   end
 end
 
@@ -327,7 +327,7 @@ def render_calibration
   i = 1
   while i <= body_capacity
     line = facts[i - 1] || "  row #{i}"
-    render_body(line)
+    render_body(line, :white)
     i += 1
   end
 

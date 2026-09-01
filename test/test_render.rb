@@ -18,7 +18,7 @@ def mini_ascii_font
 end
 
 assert("render_glyph: ASCII draws full block / space pattern") do
-  out = capture { render_glyph("A", en_font: mini_ascii_font, color: :red) }
+  out = capture { render_glyph("A", mini_ascii_font, nil, :red, 1) }
   # 1st row of "1111" → 4 full blocks
   # 2nd row of "1001" → block, space, space, block
   assert_include out, "█" * 4
@@ -26,12 +26,12 @@ assert("render_glyph: ASCII draws full block / space pattern") do
 end
 
 assert("render_glyph: ASCII out-of-range codepoint emits only spaces") do
-  out = capture { render_glyph("\x01", en_font: mini_ascii_font) }
+  out = capture { render_glyph("\x01", mini_ascii_font, nil, :white, 1) }
   assert_false out.include?("█")
 end
 
 assert("render_glyph: empty text still emits one row per font height") do
-  out = capture { render_glyph("", en_font: mini_ascii_font) }
+  out = capture { render_glyph("", mini_ascii_font, nil, :white, 1) }
   # 2 newlines (one per row), no glyph blocks
   assert_equal 2, out.count("\n")
   assert_false out.include?("█")
@@ -48,7 +48,7 @@ assert("render_glyph: jp_font with scale 2 doubles each pixel") do
     data: { 0x2422 => "\x80" },
     u2j: { 0x3042 => 0x2422 },
   }
-  out = capture { render_glyph("あ", jp_font: jp_font, scale: 2) }
+  out = capture { render_glyph("あ", nil, jp_font, :white, 2) }
   # Source 1 pixel ON + 1 pixel OFF → scaled to 2x2 grid:
   #   "██  "
   #   "██  "
@@ -64,6 +64,6 @@ assert("render_glyph: unmapped jp codepoint is rendered as blank") do
     data: { 0x2422 => "\xff" },
     u2j: { 0x3042 => 0x2422 },
   }
-  out = capture { render_glyph("漢", jp_font: jp_font) }
+  out = capture { render_glyph("漢", nil, jp_font, :white, 1) }
   assert_false out.include?("█")
 end
