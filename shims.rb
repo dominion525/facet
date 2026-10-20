@@ -18,9 +18,11 @@ class String
   def start_with?(prefix)
     plen = prefix.bytesize
     return false if bytesize < plen
+
     i = 0
     while i < plen
       return false unless getbyte(i) == prefix.getbyte(i)
+
       i += 1
     end
     true
@@ -30,19 +32,24 @@ class String
     bs = bytesize
     if suffix.nil?
       return self if bs == 0
+
       last = getbyte(bs - 1)
       if last == 0x0A
         return byteslice(0, bs - 2) if bs >= 2 && getbyte(bs - 2) == 0x0D
+
         return byteslice(0, bs - 1)
       end
       return byteslice(0, bs - 1) if last == 0x0D
+
       self
     else
       slen = suffix.bytesize
       return self if bs < slen
+
       i = 0
       while i < slen
         return self unless getbyte(bs - slen + i) == suffix.getbyte(i)
+
         i += 1
       end
       byteslice(0, bs - slen)
@@ -55,15 +62,15 @@ class String
     i = 0
     while i < bs
       b = getbyte(i)
-      if b < 0x80
-        i += 1
-      elsif b < 0xE0
-        i += 2
-      elsif b < 0xF0
-        i += 3
-      else
-        i += 4
-      end
+      i += if b < 0x80
+             1
+           elsif b < 0xE0
+             2
+           elsif b < 0xF0
+             3
+           else
+             4
+           end
       n += 1
     end
     n
@@ -99,7 +106,7 @@ class Object
   end
 
   def !=(other)
-    !(self == other)
+    !(self == other) # rubocop:disable Style/InverseMethods -- this defines != itself
   end
 
   def !
@@ -117,6 +124,7 @@ class String
     offset += bs if offset < 0
     return nil if offset < 0 || offset > bs
     return nil if length < 0
+
     length = bs - offset if offset + length > bs
     result = ""
     i = 0
@@ -132,18 +140,20 @@ class String
     i = 0
     while i < bs
       b = getbyte(i)
-      break unless b == 0x20 || b == 0x09 || b == 0x0A || b == 0x0D || b == 0x0C || b == 0x0B
+      break unless b == 0x20 || b == 0x09 || b == 0x0A || b == 0x0D || b == 0x0C || b == 0x0B # rubocop:disable Style/MultipleComparison -- avoid Array#include? (C)
+
       i += 1
     end
     byteslice(i, bs - i)
   end
 
-  def to_i
+  def to_i # rubocop:disable Metrics/PerceivedComplexity
     bs = bytesize
     i = 0
     while i < bs
       b = getbyte(i)
-      break unless b == 0x20 || b == 0x09 || b == 0x0A || b == 0x0D
+      break unless b == 0x20 || b == 0x09 || b == 0x0A || b == 0x0D # rubocop:disable Style/MultipleComparison -- avoid Array#include? (C)
+
       i += 1
     end
     sign = 1
@@ -160,6 +170,7 @@ class String
     while i < bs
       b = getbyte(i)
       break if b < 0x30 || b > 0x39
+
       n = n * 10 + (b - 0x30)
       i += 1
     end

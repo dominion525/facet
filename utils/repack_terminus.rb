@@ -13,7 +13,7 @@ sizes = [
 sizes.each do |const, path|
   load "./#{path}"
   font = Object.const_get(const)
-  esc  = font[:data].bytes.map { |b| "\\x%02x" % b }.join
+  esc  = font[:data].bytes.map { |b| format("\\x%02x", b) }.join
 
   File.write(path, <<~RUBY)
     # Generated from terminus BDF (4.49.1)

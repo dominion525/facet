@@ -108,7 +108,7 @@ end
 # 6x12..16x32, while shinonome is only 12 / 16 so 24 / 32 are scaled).
 # Every row starts at column `x` of the current line (the leading x - 1
 # cells go through the same blank skipping as the glyph's own blanks).
-# rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+# rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/ParameterLists, Metrics/PerceivedComplexity
 def render_glyph(text, en_font, jp_font, color, scale, x)
   # Hoist all font hash lookups out of the per-pixel loops.
   if en_font
@@ -166,7 +166,7 @@ def render_glyph(text, en_font, jp_font, color, scale, x)
   print COLORS[:reset]
 end
 
-# rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+# rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/ParameterLists, Metrics/PerceivedComplexity
 
 # Emit `w` cells from `bits`. `bit_w` is the bit width of one source row;
 # `scale` (>=1) horizontally repeats each source pixel.

@@ -32,9 +32,9 @@ end
 assert("String#length on UTF-8") do
   assert_equal 0, "".length
   assert_equal 3, "abc".length
-  assert_equal 1, "\xE3\x81\x82".length        # "あ"
-  assert_equal 3, "\xE3\x81\x82\xE3\x81\x84\xE3\x81\x86".length  # "あいう"
-  assert_equal 3, "a\xF0\x9F\x8D\xA3b".length  # "a🍣b"
+  assert_equal 1, "\xE3\x81\x82".length # "あ"
+  assert_equal 3, "\xE3\x81\x82\xE3\x81\x84\xE3\x81\x86".length # "あいう"
+  assert_equal 3, "a\xF0\x9F\x8D\xA3b".length # "a🍣b"
 end
 
 assert("String#empty?") do
@@ -54,6 +54,8 @@ assert("Hash#empty?") do
   assert_false({ a: 1 }.empty?)
 end
 
+# These asserts call the shims on literal operands on purpose.
+# rubocop:disable Lint/BinaryOperatorWithIdenticalOperands, Lint/LiteralAsCondition
 assert("Object#===") do
   assert_true("q" === "q")
   assert_false("q" === "l")
@@ -81,6 +83,7 @@ assert("Object#!=") do
   assert_false 1 != 1
   assert_true "a" != "b"
 end
+# rubocop:enable Lint/BinaryOperatorWithIdenticalOperands, Lint/LiteralAsCondition
 
 assert("String#size delegates to length") do
   assert_equal 0, "".size
@@ -119,12 +122,14 @@ assert("String#to_i") do
 end
 
 assert("Array#join") do
-  assert_equal "abc", ["a", "b", "c"].join
-  assert_equal "a-b-c", ["a", "b", "c"].join("-")
+  assert_equal "abc", %w[a b c].join
+  assert_equal "a-b-c", %w[a b c].join("-")
   assert_equal "", [].join
   assert_equal "only", ["only"].join("-")
 end
 
+# These asserts call the shims on literal operands on purpose.
+# rubocop:disable Lint/LiteralAsCondition
 assert("Object#! preserves nil/false/true specialization") do
   assert_false(!true)
   assert_true(!false)
@@ -139,3 +144,4 @@ assert("Object#! on truthy values returns false") do
   assert_false(!{})
   assert_false(!Object.new)
 end
+# rubocop:enable Lint/LiteralAsCondition
