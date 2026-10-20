@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build facet.mrb with Pure Ruby shims that replace several C-implemented
-# methods. Same output filename as build.sh; this version reduces the
-# C-primitive surface from 27 unique syms to 14 (or 9 excluding I/O).
-# See shims.rb for the list and the rationale.
+# Build facet-shim.mrb: the same sources as build.sh plus shims.rb, which
+# redefines 13 C-implemented methods in Pure Ruby so that facet calls fewer
+# C primitives. The output sits next to build.sh's facet.mrb.
+# See shims.rb for the list.
 set -euo pipefail
 cd "$(dirname "$0")"
 
