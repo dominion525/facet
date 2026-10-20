@@ -233,11 +233,12 @@ def render_line(line)
     body_w    = BODY_EN_FONT[:width]
     offset_y  = (body_h - bullet_h) / 2
     pad_chars = (bullet_w + body_w) / body_w + 1
+    # Body first: its blank cells would overwrite the bullet otherwise.
+    render_body("#{' ' * pad_chars}#{rest}", :white)
     print "#{CSI}s"
-    print "#{CSI}#{offset_y}B" if offset_y > 0
+    print "#{CSI}#{body_h - offset_y}A"
     render_sprite(SPRITE_BULLET, 1)
     print "#{CSI}u"
-    render_body("#{' ' * pad_chars}#{rest}", :white)
   else
     render_body("  #{line}", :white)
   end
