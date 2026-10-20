@@ -49,13 +49,17 @@ assert("render_glyph: jp_font with scale 2 doubles each pixel") do
     u2j: { 0x3042 => 0x2422 },
   }
   out = capture { render_glyph("あ", nil, jp_font, :white, 2) }
-  # Source 1 pixel ON + 1 pixel OFF → scaled to 2x2 grid:
-  #   "██  "
-  #   "██  "
+  # Source 1 pixel ON + 1 pixel OFF → scaled to 2x2 grid (trailing blanks
+  # are not emitted):
+  #   "██"
+  #   "██"
   rows = out.split("\n").reject(&:empty?)
   pixel_rows = rows.select { |l| l.include?("█") }
   assert_equal 2, pixel_rows.length
-  pixel_rows.each { |l| assert_include l, "██  " }
+  pixel_rows.each do |l|
+    assert_include l, "██"
+    assert_false l.include?(" ")
+  end
 end
 
 assert("render_glyph: unmapped jp codepoint is rendered as blank") do

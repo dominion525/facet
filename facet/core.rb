@@ -136,6 +136,7 @@ def render_glyph(text, en_font, jp_font, color, scale)
   print COLORS[color]
   r = 0
   while r < h
+    skip = 0
     cps.each do |cp|
       if cp < 0x80 && en_font
         bits = if cp >= 0x20 && cp <= 0x7e && r < en_h
@@ -143,7 +144,7 @@ def render_glyph(text, en_font, jp_font, color, scale)
                else
                  0
                end
-        emit_row(bits, en_w, en_bit_w, 1)
+        skip = emit_row(bits, en_w, en_bit_w, 1, skip)
       elsif jp_font
         jis   = jp_u2j[cp]
         bytes = jis ? jp_data[jis] : nil
@@ -153,9 +154,10 @@ def render_glyph(text, en_font, jp_font, color, scale)
                 else
                   0
                 end
-        emit_row(bits, jp_w, jp_bit_w, scale)
+        skip = emit_row(bits, jp_w, jp_bit_w, scale, skip)
       end
     end
+    # Trailing blanks are dropped: the newline makes them unnecessary.
     puts
     r += 1
   end
@@ -166,13 +168,27 @@ end
 
 # Emit `w` cells from `bits`. `bit_w` is the bit width of one source row;
 # `scale` (>=1) horizontally repeats each source pixel.
-def emit_row(bits, w, bit_w, scale)
+# Blank cells are not written; they are counted in `skip` (carried over
+# from the previous glyph) and flushed before the next "█", so whatever is
+# already on screen there stays. Returns the pending `skip`.
+def emit_row(bits, w, bit_w, scale, skip)
   x = 0
   while x < w
     shift = bit_w - 1 - (x / scale)
-    print (bits >> shift) & 1 == 1 ? "█" : " "
+    if (bits >> shift) & 1 == 1
+      if skip > 4
+        print "#{CSI}#{skip}C"
+      elsif skip > 0
+        print " " * skip
+      end
+      skip = 0
+      print "█"
+    else
+      skip += 1
+    end
     x += 1
   end
+  skip
 end
 
 def render_title(text)
@@ -276,6 +292,33 @@ end
 def render_calibration
   print "#{CSI}2J#{CSI}H"
 
+  # bitmap で実際の描画パスを使う。タイトル font + 本文 font + 日本語と
+  # 「何行入るか」を同時に確認できる。
+  # 通常の render() と同じく、タイトル直後は puts 1 行ぶんだけ空けてから
+  # body を積む。"空行をたっぷり入れるかどうか" は PAGES 側の自由。
+  print "#{CSI}5;3H"
+  render_title("calib  #{SCREEN_COLS}x#{SCREEN_ROWS}  base=#{SPRITE_BASELINE}")
+  puts
+  body_capacity = (SPRITE_TOP_ROW - 5 - 16 - 1) / 12
+  body_capacity = 1 if body_capacity < 1
+  en_per_line = SCREEN_COLS / BODY_EN_FONT[:width]
+  jp_per_line = SCREEN_COLS / BODY_JP_FONT[:width]
+  facts = [
+    "  日本語混在 漢字 ひらがな カタカナ あいう abc XYZ 0123456789",
+    "  width: #{en_per_line} ascii or #{jp_per_line} jp chars per line",
+    "  title #{TITLE_FONT[:width]}x#{TITLE_FONT[:height]}  body #{BODY_EN_FONT[:width]}x#{BODY_EN_FONT[:height]} (en) / #{BODY_JP_FONT[:width]}x#{BODY_JP_FONT[:height]} (jp)",
+    "  capacity: #{body_capacity} body rows, sprite top y=#{SPRITE_TOP_ROW}",
+    "  DURATION_SEC=#{DURATION_SEC}",
+  ]
+  i = 1
+  while i <= body_capacity
+    line = facts[i - 1] || "  row #{i}"
+    render_body(line, :white)
+    i += 1
+  end
+
+  # 四隅と ruler は文字の後に描く。文字の短い空白は空白の文字で書くので、
+  # 先に描くと 1 桁目の ruler が消える。
   print "#{CSI}1;1H+"
   print "#{CSI}1;#{SCREEN_COLS}H+"
   print "#{CSI}#{SCREEN_ROWS};1H+"
@@ -305,31 +348,6 @@ def render_calibration
       print "|"
     end
     r += 1
-  end
-
-  # bitmap で実際の描画パスを使う。タイトル font + 本文 font + 日本語と
-  # 「何行入るか」を同時に確認できる。
-  # 通常の render() と同じく、タイトル直後は puts 1 行ぶんだけ空けてから
-  # body を積む。"空行をたっぷり入れるかどうか" は PAGES 側の自由。
-  print "#{CSI}5;3H"
-  render_title("calib  #{SCREEN_COLS}x#{SCREEN_ROWS}  base=#{SPRITE_BASELINE}")
-  puts
-  body_capacity = (SPRITE_TOP_ROW - 5 - 16 - 1) / 12
-  body_capacity = 1 if body_capacity < 1
-  en_per_line = SCREEN_COLS / BODY_EN_FONT[:width]
-  jp_per_line = SCREEN_COLS / BODY_JP_FONT[:width]
-  facts = [
-    "  日本語混在 漢字 ひらがな カタカナ あいう abc XYZ 0123456789",
-    "  width: #{en_per_line} ascii or #{jp_per_line} jp chars per line",
-    "  title #{TITLE_FONT[:width]}x#{TITLE_FONT[:height]}  body #{BODY_EN_FONT[:width]}x#{BODY_EN_FONT[:height]} (en) / #{BODY_JP_FONT[:width]}x#{BODY_JP_FONT[:height]} (jp)",
-    "  capacity: #{body_capacity} body rows, sprite top y=#{SPRITE_TOP_ROW}",
-    "  DURATION_SEC=#{DURATION_SEC}",
-  ]
-  i = 1
-  while i <= body_capacity
-    line = facts[i - 1] || "  row #{i}"
-    render_body(line, :white)
-    i += 1
   end
 
   # スプライトも本番と同じ位置（左端と右端）に置く。
