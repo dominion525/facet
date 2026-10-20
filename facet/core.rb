@@ -106,8 +106,10 @@ end
 # Each codepoint is drawn using `en_font` when ASCII (<0x80) and `jp_font`
 # otherwise. `scale` only applies to the jp side (terminus already provides
 # 6x12..16x32, while shinonome is only 12 / 16 so 24 / 32 are scaled).
+# Every row starts at column `x` of the current line (the leading x - 1
+# cells go through the same blank skipping as the glyph's own blanks).
 # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
-def render_glyph(text, en_font, jp_font, color, scale)
+def render_glyph(text, en_font, jp_font, color, scale, x)
   # Hoist all font hash lookups out of the per-pixel loops.
   if en_font
     en_w     = en_font[:width]
@@ -136,7 +138,7 @@ def render_glyph(text, en_font, jp_font, color, scale)
   print COLORS[color]
   r = 0
   while r < h
-    skip = 0
+    skip = x - 1
     cps.each do |cp|
       if cp < 0x80 && en_font
         bits = if cp >= 0x20 && cp <= 0x7e && r < en_h
@@ -191,12 +193,12 @@ def emit_row(bits, w, bit_w, scale, skip)
   skip
 end
 
-def render_title(text)
-  render_glyph(text, TITLE_FONT, JP_FONT, :yellow, JP_SCALE)
+def render_title(text, x)
+  render_glyph(text, TITLE_FONT, JP_FONT, :yellow, JP_SCALE, x)
 end
 
 def render_body(text, color)
-  render_glyph(text, BODY_EN_FONT, BODY_JP_FONT, color, 1)
+  render_glyph(text, BODY_EN_FONT, BODY_JP_FONT, color, 1, 1)
 end
 
 def sprite_width(rows)
@@ -263,7 +265,7 @@ end
 def render(idx)
   print "#{CSI}2J#{CSI}H"
   page = PAGES[idx]
-  render_title(page[:title])
+  render_title(page[:title], 1)
   puts
   page[:body].each { |line| render_line(line) }
 
@@ -296,8 +298,8 @@ def render_calibration
   # 「何行入るか」を同時に確認できる。
   # 通常の render() と同じく、タイトル直後は puts 1 行ぶんだけ空けてから
   # body を積む。"空行をたっぷり入れるかどうか" は PAGES 側の自由。
-  print "#{CSI}5;3H"
-  render_title("calib  #{SCREEN_COLS}x#{SCREEN_ROWS}  base=#{SPRITE_BASELINE}")
+  print "#{CSI}5;1H"
+  render_title("calib  #{SCREEN_COLS}x#{SCREEN_ROWS}  base=#{SPRITE_BASELINE}", 3)
   puts
   body_capacity = (SPRITE_TOP_ROW - 5 - 16 - 1) / 12
   body_capacity = 1 if body_capacity < 1
