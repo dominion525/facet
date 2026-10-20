@@ -29,6 +29,10 @@ assert("String#chomp with explicit suffix") do
   assert_equal "", "".chomp("x")
 end
 
+assert("String#chomp keeps UTF-8 before the newline") do
+  assert_equal "\xE3\x81\x82", "\xE3\x81\x82\n".chomp # "あ"
+end
+
 assert("String#length on UTF-8") do
   assert_equal 0, "".length
   assert_equal 3, "abc".length
@@ -102,12 +106,23 @@ assert("String#byteslice") do
   assert_equal "l", "hello".byteslice(2)
 end
 
+assert("String#byteslice on UTF-8") do
+  s = "a\xE3\x81\x82b" # "aあb"
+  assert_equal "\xE3\x81\x82", s.byteslice(1, 3)
+  assert_equal [0xE3, 0x81], s.byteslice(1, 2).bytes
+  assert_equal [0x82, 0x62], s.byteslice(3, 2).bytes
+end
+
 assert("String#lstrip") do
   assert_equal "abc", "   abc".lstrip
   assert_equal "hi", "\t\nhi".lstrip
   assert_equal "abc", "abc".lstrip
   assert_equal "", "   ".lstrip
   assert_equal "-foo", "  -foo".lstrip
+end
+
+assert("String#lstrip keeps UTF-8 after the blanks") do
+  assert_equal "\xE3\x81\x82\xE3\x81\x84", "  \xE3\x81\x82\xE3\x81\x84".lstrip # "あい"
 end
 
 assert("String#to_i") do
