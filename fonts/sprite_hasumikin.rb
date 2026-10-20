@@ -1,6 +1,8 @@
-# Sprite data taken from picoruby-rapicco (hasumikin author)
-# Original: https://github.com/picoruby/rapicco / picoruby/mrbgems/picoruby-rapicco
-# License: MIT, Copyright (c) 2025 HASUMI Hitoshi
+# Sprite data taken from picoruby-rapicco in PicoRuby ("hasumikin" set)
+# Original: https://github.com/picoruby/picoruby
+#           mrbgems/picoruby-rapicco/mrblib/sprite.rb
+# License: MIT, Copyright © 2020 HASUMI Hitoshi
+# SPRITE_CAMERLENGO drops the four blank leading rows of the original.
 #
 # Each row uses one character per pixel:
 #   '.' = transparent (cursor advance)
