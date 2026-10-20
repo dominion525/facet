@@ -47,14 +47,14 @@ PAGES = [
   { title: "ascii font",
     body: ["- terminus 4.49.1, 4 sizes bundled",
            "    6x12 / 8x16 / 12x24 / 16x32",
-           "- block character (UPPER / LOWER / FULL)",
+           "- 1 pixel = 1 terminal cell",
            "- glyphs packed as string literals in fonts/"] },
 
   { title: "decoration",
-    body: ["- bullet lines render as cyan dots",
+    body: ["- bullet lines get a red sprite dot",
            "- non-bullet lines stay plain",
-           "- title color is yellow + bold",
-           "- footer dimmed"] },
+           "- title is yellow, body is white",
+           "- rabbit = page progress, turtle = time"] },
 
   { title: "東雲フォント",
     body: ["- shinonome 0.9.11 を取り込み",
@@ -78,7 +78,7 @@ PAGES = [
   { title: "build",
     body: ["- `./build.sh` で facet.mrb を生成",
            "- fonts/*.rb を先に並べて 1 ファイルに mrbc",
-           "- 大きいデータは chunk 化して unpack する"] },
+           "- 東雲のデータは chunk に分けて起動時に unpack する"] },
 
   { title: "facet",
     body: ["",
