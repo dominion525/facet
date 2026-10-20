@@ -12,7 +12,7 @@ AllCops:
   Exclude:
     - fonts/*.rb         # generated, intentionally long
     - test/assert.rb     # vendored verbatim from mruby (MIT)
-    - tasks/**/*         # local notes and cloned references
+    - tasks/**/*         # untracked local files (see .gitignore)
     - utils/bdf_*.rb     # CRuby helper scripts, kept as-is
     - vendor/bundle/**/* # installed gems
     - vendor/**/*

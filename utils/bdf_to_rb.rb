@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # Convert a BDF font (ASCII range 0x20..0x7E) into a Ruby Hash literal
-# for embedding in facet.rb.
+# for fonts/terminus_*.rb.
 #
 # Usage:
 #   ruby utils/bdf_to_rb.rb <font.bdf> [CONST_NAME]
