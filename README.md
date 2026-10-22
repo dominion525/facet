@@ -1,6 +1,6 @@
 # facet
 
-facet は、端末で見せるスライドツールで、mruby で動きます。
+facet は、端末で見せるスライドツールで、[mruby](https://mruby.org/) で動きます。
 
 ![箇条書きのページ。下端に兎と亀がいる](docs/images/slide.png)
 
@@ -105,15 +105,15 @@ shim 版は、通常版と同じソースに `shims.rb` を加えて作ります
 ```
 
 テストは mruby の `test/assert.rb` を使っているので、`mruby` だけで実行できます。
-lint には CRuby の rubocop を使い、`bundle install` の後に `bundle exec rubocop` で実行します。
+lint には CRuby の [RuboCop](https://rubocop.org/) を使い、`bundle install` の後に `bundle exec rubocop` で実行します。
 
 ## ライセンス
 
-facet は MIT License です（`LICENSE`）。
-同梱しているフォント、文字コードの対応表、スプライト、テスト用のコードのライセンスは、`LICENSE-3rdparty` に全文があります。
+facet は MIT License です（[LICENSE](LICENSE)）。
+同梱しているフォント、文字コードの対応表、スプライト、テスト用のコードのライセンスは、[LICENSE-3rdparty](LICENSE-3rdparty) に全文があります。
 
-- Terminus Font 4.49.1：SIL Open Font License 1.1
-- 東雲フォント 0.9.11：Public Domain
-- 東雲フォントの UTF-8 から JIS への対応表（Unicode の JIS0208.TXT から作ったもの）：Unicode License v3
-- スプライト（PicoRuby の picoruby-rapicco から取り込んだもの）：MIT License
-- mruby の `test/assert.rb`：MIT License
+- [Terminus Font](https://terminus-font.sourceforge.net/) 4.49.1：SIL Open Font License 1.1
+- [東雲フォント](http://openlab.ring.gr.jp/efont/shinonome/) 0.9.11：Public Domain
+- 東雲フォントの UTF-8 から JIS への対応表（[Unicode](https://www.unicode.org/) の [JIS0208.TXT](https://www.unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/JIS/JIS0208.TXT) から作ったもの）：Unicode License v3
+- スプライト（[PicoRuby](https://github.com/picoruby/picoruby) の [picoruby-rapicco](https://github.com/picoruby/picoruby/tree/master/mrbgems/picoruby-rapicco) から取り込んだもの）：MIT License
+- [mruby](https://github.com/mruby/mruby) の [`test/assert.rb`](https://github.com/mruby/mruby/blob/master/test/assert.rb)：MIT License
