@@ -110,9 +110,10 @@ lint には CRuby の rubocop を使い、`bundle install` の後に `bundle exe
 ## ライセンス
 
 facet は MIT License です（`LICENSE`）。
-同梱しているフォント、スプライト、テスト用のコードのライセンスは、`LICENSE-3rdparty` に全文があります。
+同梱しているフォント、文字コードの対応表、スプライト、テスト用のコードのライセンスは、`LICENSE-3rdparty` に全文があります。
 
 - Terminus Font 4.49.1：SIL Open Font License 1.1
 - 東雲フォント 0.9.11：Public Domain
+- 東雲フォントの UTF-8 から JIS への対応表（Unicode の JIS0208.TXT から作ったもの）：Unicode License v3
 - スプライト（PicoRuby の picoruby-rapicco から取り込んだもの）：MIT License
 - mruby の `test/assert.rb`：MIT License

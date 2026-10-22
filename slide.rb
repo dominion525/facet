@@ -6,7 +6,7 @@
 #
 #   ASCII (terminus)    : FONT_6x12 / FONT_8x16 / FONT_12x24 / FONT_16x32
 #   Japanese (shinonome): SHINONOME_K12 / SHINONOME_K16
-#   Sprites (hasumikin) : SPRITE_RAPIKO / SPRITE_CAMERLENGO
+#   Sprites (hasumikin) : SPRITE_RAPIKO / SPRITE_CAMERLENGO / SPRITE_BULLET
 
 # ---------- layout ----------
 SCREEN_COLS     = 480  # assumed terminal width in cells (Rapicco-scale, 1 cell = 1 px)
